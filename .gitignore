@@ -61,3 +61,31 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# Eclipse
+# =========================
+
+.classpath
+.project
+.externalToolBuilders
+
+# Images
+# =========================
+
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.bmp
+*.gif
+*.ico
+
+# Project Specific
+# =========================
+
+.settings/
+eclipse-launch-profiles/
+target/
+node_modules/
+
+
