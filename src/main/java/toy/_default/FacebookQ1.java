@@ -22,7 +22,7 @@ public final class FacebookQ1 {
 	private FacebookQ1() {
 		// Not meant to be instantiated
 	}
-	
+
 	public static boolean containsSequenceSum(int[] a, int t) {
 		if (a == null || a.length == 0) {
 			throw new IllegalArgumentException();
@@ -31,19 +31,14 @@ public final class FacebookQ1 {
 			throw new IllegalArgumentException();
 		}
 		int sum = 0;
-		boolean sumStarted = false;
 		int sumStartAt = 0;
 		for (int i = 0; i < a.length; i++) {
-			log.info("i [{}], sumStartAt [{}]", i, sumStartAt);
+			log.debug("i [{}], sum[{}], sumStartAt [{}]", i, sum, sumStartAt);
 			if (a[i] == t) {
 				return true;
 			}
-			if (a[i] > t) {
-				continue;
-			}
-			if (!sumStarted) {
+			if (sum == 0) {
 				sumStartAt = i;
-				sumStarted = true;
 			}
 			sum += a[i];
 			if (sum == t) {
@@ -59,7 +54,6 @@ public final class FacebookQ1 {
 			if (sum == t) {
 				return true;
 			}
-			sum = a[sumStartAt];
 		}
 		return false;
 	}
