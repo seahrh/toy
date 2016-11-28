@@ -19,28 +19,14 @@ public class QuicksortTest {
 	@Test(dataProvider = "data")
 	public void lomutoTest(int[] in, int[] expected, String description) {
 		Quicksort.quicksort(in, 0, in.length - 1, "lomuto");
-		StringBuilder sb = new StringBuilder("actual: ");
-		for (int i = 0; i < in.length; i++) {
-			sb.append(in[i]);
-			if (i != in.length - 1) {
-				sb.append(", ");
-			}
-		}
-		log.info("\n\n{}\n\n", sb.toString());
+		log.debug("\n\n{}\n\n", debug(in));
 		assertArrayEquals(expected, in);
 	}
 	
 	@Test(dataProvider = "data")
 	public void hoareTest(int[] in, int[] expected, String description) {
 		Quicksort.quicksort(in, 0, in.length - 1, "hoare");
-		StringBuilder sb = new StringBuilder("actual: ");
-		for (int i = 0; i < in.length; i++) {
-			sb.append(in[i]);
-			if (i != in.length - 1) {
-				sb.append(", ");
-			}
-		}
-		log.info("\n\n{}\n\n", sb.toString());
+		log.debug("\n\n{}\n\n", debug(in));
 		assertArrayEquals(expected, in);
 	}
 
@@ -90,6 +76,17 @@ public class QuicksortTest {
 				{ odd3, oddSorted, "len 9 array odd len random" },
 				{ odd4, oddSorted, "len 9 array odd len random" },
 				{ odd5, oddSorted, "len 9 array odd len random" } };
+	}
+	
+	private static String debug(int[] in) {
+		StringBuilder sb = new StringBuilder("actual: ");
+		for (int i = 0; i < in.length; i++) {
+			sb.append(in[i]);
+			if (i != in.length - 1) {
+				sb.append(", ");
+			}
+		}
+		return sb.toString();
 	}
 
 }

@@ -67,7 +67,7 @@ public class Quicksort {
 			}
 		}
 		swap(arr, end, pivotIndex);
-		log.info("pivot [{}], pivotIndex [{}]", pivot, pivotIndex);
+		log.debug("pivot [{}], pivotIndex [{}]", pivot, pivotIndex);
 		return pivotIndex;
 	}
 
