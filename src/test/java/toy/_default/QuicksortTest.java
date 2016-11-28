@@ -17,8 +17,22 @@ public class QuicksortTest {
 	private static final Logger log = LoggerFactory.getLogger(QuicksortTest.class);
 
 	@Test(dataProvider = "data")
-	public void test(int[] in, int[] expected, String description) {
-		Quicksort.quicksort(in, 0, in.length - 1);
+	public void lomutoTest(int[] in, int[] expected, String description) {
+		Quicksort.quicksort(in, 0, in.length - 1, "lomuto");
+		StringBuilder sb = new StringBuilder("actual: ");
+		for (int i = 0; i < in.length; i++) {
+			sb.append(in[i]);
+			if (i != in.length - 1) {
+				sb.append(", ");
+			}
+		}
+		log.info("\n\n{}\n\n", sb.toString());
+		assertArrayEquals(expected, in);
+	}
+	
+	@Test(dataProvider = "data")
+	public void hoareTest(int[] in, int[] expected, String description) {
+		Quicksort.quicksort(in, 0, in.length - 1, "hoare");
 		StringBuilder sb = new StringBuilder("actual: ");
 		for (int i = 0; i < in.length; i++) {
 			sb.append(in[i]);
@@ -56,7 +70,6 @@ public class QuicksortTest {
 		int[] odd4 = Ints.toArray(list);
 		Collections.shuffle(list);
 		int[] odd5 = Ints.toArray(list);
-		
 		return new Object[][] { { new int[] { 1 }, new int[] { 1 }, "len 1 array" },
 				{ new int[] { 2, 1 }, new int[] { 1, 2 }, "len 2 unsorted array" },
 				{ new int[] { 20, 1 }, new int[] { 1, 20 }, "len 2 unsorted non-consecutive array" },
