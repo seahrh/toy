@@ -1,6 +1,10 @@
 package toy._default;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Quicksort {
+	private static final Logger log = LoggerFactory.getLogger(Quicksort.class);
 
 	private Quicksort() {
 		// Not meant to be instantiated
@@ -14,16 +18,16 @@ public class Quicksort {
 		if (len == 0) {
 			throw new IllegalArgumentException();
 		}
-		if (len == 1) {
+		// Base case: subarray of len 1 is already sorted
+		// The end index decrements recursively
+		// until it is less than begin index
+		if (begin >= end) {
 			return;
 		}
 		if (begin < 0 || begin >= len) {
 			throw new IllegalArgumentException();
 		}
 		if (end < 0 || end >= len) {
-			throw new IllegalArgumentException();
-		}
-		if (begin > end) {
 			throw new IllegalArgumentException();
 		}
 		int pivotIndex = partition(arr, begin, end);
@@ -40,23 +44,24 @@ public class Quicksort {
 	 * @return
 	 */
 	private static int partition(int[] arr, int begin, int end) {
-		// Do not use (begin + end)/2 because integer overflow
-		int mid = (end - begin) / 2 + begin;
-		int pivot = medianOfThree(new int[] {arr[begin], arr[mid], arr[end]});
+		setMedianOfThreeAsLastElement(arr, begin, end);
+		int pivot = arr[end];
 		int pivotIndex = begin;
-		for (int i = begin; i <= end; i++) {
+		for (int i = begin; i < end; i++) {
 			if (arr[i] <= pivot) {
 				swap(arr, i, pivotIndex);
 				pivotIndex++;
 			}
 		}
+		swap(arr, end, pivotIndex);
+		log.info("pivot [{}], pivotIndex [{}]", pivot, pivotIndex);
 		return pivotIndex;
 	}
-	
+
 	private static void swap(int[] arr, int index1, int index2) {
 		if (arr == null) {
 			throw new IllegalArgumentException();
-		} 
+		}
 		int len = arr.length;
 		if (len == 0) {
 			throw new IllegalArgumentException();
@@ -70,34 +75,45 @@ public class Quicksort {
 		if (index2 < 0 || index2 >= len) {
 			throw new IllegalArgumentException();
 		}
+		if (index1 == index2) {
+			return;
+		}
 		int temp = arr[index1];
 		arr[index1] = arr[index2];
 		arr[index2] = temp;
 	}
 
-	private static int medianOfThree(int[] arr) {
+	private static void setMedianOfThreeAsLastElement(int[] arr, int begin,
+			int end) {
 		if (arr == null) {
 			throw new IllegalArgumentException();
 		}
-		if (arr.length != 3) {
+		if (begin == end) {
 			throw new IllegalArgumentException();
 		}
-		if (arr[0] >= arr[1] && arr[0] <= arr[2]) {
-			return arr[0];
+		// Do not modify the array if there are only 2 elements
+		if (end - begin == 1) {
+			return;
 		}
-		if (arr[0] <= arr[1] && arr[0] >= arr[2]) {
-			return arr[0];
+		// Do not use (begin + end)/2 because integer overflow
+		int mid = (end - begin) / 2 + begin;
+		if (arr[begin] >= arr[mid] && arr[begin] <= arr[end]) {
+			swap(arr, begin, end);
+			return;
 		}
-		if (arr[1] >= arr[0] && arr[1] <= arr[2]) {
-			return arr[1];
+		if (arr[begin] <= arr[mid] && arr[begin] >= arr[end]) {
+			swap(arr, begin, end);
+			return;
 		}
-		if (arr[1] <= arr[0] && arr[1] >= arr[2]) {
-			return arr[1];
+		if (arr[mid] >= arr[begin] && arr[mid] <= arr[end]) {
+			swap(arr, mid, end);
+			return;
 		}
-		if (arr[2] >= arr[0] && arr[2] <= arr[1]) {
-			return arr[2];
+		if (arr[mid] <= arr[begin] && arr[mid] >= arr[end]) {
+			swap(arr, mid, end);
+			return;
 		}
-		return arr[2];
+		// Do nothing; last element is the pivot
 	}
 
 }
