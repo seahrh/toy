@@ -86,7 +86,7 @@ public class Trader implements Comparable<Trader>, Serializable {
 			log.error("id must not be null or empty string");
 			throw new IllegalArgumentException();
 		}
-		this.id = id;
+		this.id = id.toLowerCase();
 	}
 
 	@Override

@@ -119,7 +119,7 @@ public class Transaction implements Comparable<Transaction>, Serializable {
 			log.error("traderId must not be null or empty string");
 			throw new IllegalArgumentException();
 		}
-		this.traderId = traderId;
+		this.traderId = traderId.toLowerCase();
 	}
 
 	@Override
