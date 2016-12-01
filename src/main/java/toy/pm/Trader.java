@@ -1,5 +1,6 @@
 package toy.pm;
 
+import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,8 +11,10 @@ import org.slf4j.LoggerFactory;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-public class Trader implements Comparable<Trader> {
+public class Trader implements Comparable<Trader>, Serializable {
 	private static final Logger log = LoggerFactory.getLogger(Trader.class);
+	private static final long serialVersionUID = 1L;
+	private static final Gson gson = new Gson();
 	private String name = null;
 	private String city = null;
 	private String id = null;
@@ -22,13 +25,13 @@ public class Trader implements Comparable<Trader> {
 		id(id);
 	}
 
-	public static List<Trader> listFromJson(String json) {
+	public static List<Trader> fromJsonToList(String json) {
 		if (json == null || json.isEmpty()) {
 			log.error("json must not be null or empty string");
 			throw new IllegalArgumentException();
 		}
 		final Type listType = new TypeToken<ArrayList<Trader>>() {}.getType();
-		return new Gson().fromJson(json, listType);
+		return gson.fromJson(json, listType);
 	}
 
 	public String toString() {
