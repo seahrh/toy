@@ -13,7 +13,7 @@ public class EvenNumberFirstTest {
 	@Test(dataProvider = "data")
 	public void test(int[] in, int[] expected, String description) {
 		EvenNumberFirst.partition(in);
-		log.info("\n\n{}\n\n", debug(in));
+		log.debug("\n\n{}\n\n", debug(in));
 		assertArrayEquals(expected, in);
 	}
 
