@@ -35,7 +35,7 @@ public class Transaction implements Serializable {
 							JsonDeserializationContext context)
 							throws JsonParseException {
 						return new DateTime(json.getAsJsonPrimitive()
-							.getAsLong(), DateTimeZone.UTC);
+							.getAsLong() * 1000L, DateTimeZone.UTC);
 					}
 				});
 		builder.registerTypeAdapter(BigDecimal.class,
@@ -50,7 +50,7 @@ public class Transaction implements Serializable {
 		gson = builder.create();
 	}
 
-	public Transaction(long timestamp, BigDecimal value, String traderId) {
+	public Transaction(DateTime timestamp, BigDecimal value, String traderId) {
 		timestamp(timestamp);
 		value(value);
 		traderId(traderId);
@@ -80,12 +80,12 @@ public class Transaction implements Serializable {
 		return timestamp;
 	}
 
-	public void timestamp(long timestamp) {
-		if (timestamp < 1) {
-			log.error("timestamp must be greater than 0. [{}]", timestamp);
+	public void timestamp(DateTime timestamp) {
+		if (timestamp == null) {
+			log.error("timestamp must not be null");
 			throw new IllegalArgumentException();
 		}
-		this.timestamp = new DateTime(timestamp, DateTimeZone.UTC);
+		this.timestamp = timestamp;
 	}
 
 	public BigDecimal value() {
