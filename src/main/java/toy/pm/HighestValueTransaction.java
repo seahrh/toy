@@ -15,7 +15,13 @@ public final class HighestValueTransaction {
 			System.out.println("No data");
 			System.exit(0);
 		}
-		
+		Transaction maxValueTxn = txns.get(0);
+		for (Transaction txn : txns) {
+			if (txn.value().compareTo(maxValueTxn.value()) > 0) {
+				maxValueTxn = txn;
+			}
+		}
+		System.out.println(maxValueTxn);
 	}
 
 }
