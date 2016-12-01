@@ -29,7 +29,8 @@ public class EvenNumberFirstTest {
 				{ new int[] { 10, 2, 4, 6, 4, 7, 1, 3, 5 }, new int[] { 10, 2, 4, 6, 4, 7, 1, 3, 5 }, "odd len 9 array sorted" },
 				{ new int[] { 2, 4, 7, 6, 1, 3, 5, 4, 10 }, new int[] { 2, 4, 10, 6, 4, 3, 5, 1, 7 }, "odd len 9 array unsorted" },
 				{ new int[] { 1, 1, 1 }, new int[] { 1, 1, 1 }, "all odd values" },
-				{ new int[] { 2, 2, 2 }, new int[] { 2, 2, 2 }, "all even values" } };
+				{ new int[] { 2, 2, 2 }, new int[] { 2, 2, 2 }, "all even values" },
+				{ new int[] { 2, -4, -7, 6, 1, 3, 5, -4 }, new int[] { 2, -4, -4, 6, 1, 3, 5, -7 }, "negative numbers" } };
 	}
 	
 	private static String debug(int[] in) {
