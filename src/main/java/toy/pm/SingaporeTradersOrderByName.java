@@ -6,9 +6,9 @@ import java.util.Map;
 
 import com.google.common.collect.TreeMultimap;
 
-public final class SingaporeTradersSortedByName {
+public final class SingaporeTradersOrderByName {
 
-	private SingaporeTradersSortedByName() {
+	private SingaporeTradersOrderByName() {
 		// Not meant to be instantiated
 	}
 

@@ -13,16 +13,17 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
-public class Transaction implements Serializable {
+public class Transaction implements Comparable<Transaction>, Serializable {
 	private static final Logger log = LoggerFactory.getLogger(Transaction.class);
 	private static final long serialVersionUID = 1L;
 	private static Gson gson;
+
 	private DateTime timestamp = null;
 	private BigDecimal value = null;
 	private String traderId = null;
@@ -40,8 +41,8 @@ public class Transaction implements Serializable {
 				});
 		builder.registerTypeAdapter(BigDecimal.class,
 				new JsonDeserializer<BigDecimal>() {
-					public BigDecimal deserialize(JsonElement json, Type typeOfT,
-							JsonDeserializationContext context)
+					public BigDecimal deserialize(JsonElement json,
+							Type typeOfT, JsonDeserializationContext context)
 							throws JsonParseException {
 						return new BigDecimal(json.getAsJsonPrimitive()
 							.getAsString());
@@ -74,6 +75,15 @@ public class Transaction implements Serializable {
 		sb.append(", ");
 		sb.append(traderId);
 		return sb.toString();
+	}
+
+	/*
+	 * Instances are ordered by value.
+	 * 
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	public int compareTo(Transaction other) {
+		return value.compareTo(other.value());
 	}
 
 	public DateTime timestamp() {
