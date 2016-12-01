@@ -3,6 +3,10 @@ package toy.pm;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Find the transaction with the highest value.
+ *
+ */
 public final class HighestValueTransaction {
 
 	private HighestValueTransaction() {
@@ -15,6 +19,7 @@ public final class HighestValueTransaction {
 			System.out.println("No data");
 			System.exit(0);
 		}
+		// It takes O(n) time to find the max-value txn in a loop.
 		Transaction maxValueTxn = txns.get(0);
 		for (Transaction txn : txns) {
 			if (txn.value().compareTo(maxValueTxn.value()) > 0) {

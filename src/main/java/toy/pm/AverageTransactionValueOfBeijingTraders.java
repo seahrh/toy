@@ -9,6 +9,10 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Find the average of transactions' values from the traders living in Beijing.
+ * 
+ */
 public final class AverageTransactionValueOfBeijingTraders {
 	private static final Logger log = LoggerFactory.getLogger(AverageTransactionValueOfBeijingTraders.class);
 
@@ -27,9 +31,21 @@ public final class AverageTransactionValueOfBeijingTraders {
 			System.out.println("No data");
 			System.exit(0);
 		}
+		// Use a HashSet to store the trader ids.
+		// The average case takes theta(1) time for add, remove and, more
+		// importantly for this use case, contains.
+		// The average case should occur with high probability because the
+		// trader id is unique.
+		// Loop transactions and check whether the trader id is contained in the
+		// set.
+		// The HashSet is backed by a HashMap (hash table) which takes O(n)
+		// space.
+		// The HashSet also discards duplicate ids.
 		Set<String> beijingTraderIds = new HashSet<>(traders.size());
 		for (Trader t : traders) {
-			if (t.city().toLowerCase().equals("beijing")) {
+			if (t.city()
+				.toLowerCase()
+				.equals("beijing")) {
 				beijingTraderIds.add(t.id());
 			}
 		}

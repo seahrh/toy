@@ -7,6 +7,10 @@ import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Responsible for making api calls
+ *
+ */
 public class PmApi {
 	private static final Logger log = LoggerFactory.getLogger(PmApi.class);
 	private static final String BASE_URL = "https://fvjkpkflnc.execute-api.us-east-1.amazonaws.com";
@@ -36,7 +40,7 @@ public class PmApi {
 			.ignoreContentType(true)
 			.execute()
 			.body();
-		log.info(ret);
+		log.debug(ret);
 		return ret;
 	}
 

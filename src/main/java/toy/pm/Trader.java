@@ -15,6 +15,7 @@ public class Trader implements Comparable<Trader>, Serializable {
 	private static final Logger log = LoggerFactory.getLogger(Trader.class);
 	private static final long serialVersionUID = 1L;
 	private static final Gson gson = new Gson();
+
 	private String name = null;
 	private String city = null;
 	private String id = null;
@@ -25,15 +26,24 @@ public class Trader implements Comparable<Trader>, Serializable {
 		id(id);
 	}
 
+	/**
+	 * Converts the json response to a list of Trader objects.
+	 * 
+	 * @param json
+	 *            string representing a json array
+	 * @return List of Trader objects
+	 */
 	public static List<Trader> fromJsonToList(String json) {
 		if (json == null || json.isEmpty()) {
 			log.error("json must not be null or empty string");
 			throw new IllegalArgumentException();
 		}
-		final Type listType = new TypeToken<ArrayList<Trader>>() {}.getType();
+		final Type listType = new TypeToken<ArrayList<Trader>>() {
+		}.getType();
 		return gson.fromJson(json, listType);
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(name);
@@ -44,8 +54,9 @@ public class Trader implements Comparable<Trader>, Serializable {
 		return sb.toString();
 	}
 
-	/* 
-	 * Instances are ordered by trader id.
+	/*
+	 * Instances are ordered by trader id. An object ordering is required for
+	 * use in a TreeMultimap.
 	 * 
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */

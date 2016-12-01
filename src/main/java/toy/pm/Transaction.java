@@ -29,6 +29,11 @@ public class Transaction implements Comparable<Transaction>, Serializable {
 	private String traderId = null;
 
 	static {
+		// Converts the following json types to Java types:
+		// number timestamp --> DateTime
+		// number value --> BigDecimal
+		// Otherwise, gson handles primitive types automatically.
+		// So there is no need to manually convert traderId (String).
 		GsonBuilder builder = new GsonBuilder();
 		builder.registerTypeAdapter(DateTime.class,
 				new JsonDeserializer<DateTime>() {
@@ -57,6 +62,13 @@ public class Transaction implements Comparable<Transaction>, Serializable {
 		traderId(traderId);
 	}
 
+	/**
+	 * Converts the json response to a list of Transaction objects.
+	 * 
+	 * @param json
+	 *            string representing a json array
+	 * @return List of Transaction objects
+	 */
 	public static List<Transaction> fromJsonToList(String json) {
 		if (json == null || json.isEmpty()) {
 			log.error("json must not be null or empty string");
@@ -67,6 +79,7 @@ public class Transaction implements Comparable<Transaction>, Serializable {
 		return gson.fromJson(json, listType);
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(value);
@@ -78,7 +91,8 @@ public class Transaction implements Comparable<Transaction>, Serializable {
 	}
 
 	/*
-	 * Instances are ordered by value.
+	 * Instances are ordered by value. An object ordering is required for
+	 * use in a TreeMultimap.
 	 * 
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
