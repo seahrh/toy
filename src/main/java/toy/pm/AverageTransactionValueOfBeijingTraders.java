@@ -58,7 +58,7 @@ public final class AverageTransactionValueOfBeijingTraders {
 				val = txn.value();
 				sum = sum.add(val);
 				n++;
-				log.info("n [{}], val [{}], sum [{}]", n, val, sum);
+				log.debug("n [{}], val [{}], sum [{}]", n, val, sum);
 			}
 		}
 		BigDecimal avg = sum.divide(new BigDecimal(n));
