@@ -20,8 +20,11 @@ public class Quicksort {
 			throw new IllegalArgumentException();
 		}
 		// Base case: subarray of len 1 is already sorted
-		// The end index decrements recursively
-		// until it is less than begin index
+		// (i.e. begin index = end index)
+		// Begin end may also be greater than end index,
+		// as a non-existing partition is passed to this method.
+		// Uneven paritioning occurs when the pivot is found on the boundary of
+		// the subarray.
 		if (begin >= end) {
 			return;
 		}
@@ -86,13 +89,15 @@ public class Quicksort {
 		int j = end;
 		while (true) {
 			while (arr[i] < pivot && i <= j) {
-				// Prevent ArrayOutOfBounds if i is incremented after the last element
+				// Prevent ArrayOutOfBounds if i is incremented after the last
+				// element
 				if (++i > end) {
 					break;
 				}
 			}
 			while (arr[j] > pivot && j >= i) {
-				// Prevent ArrayOutOfBounds if j is decremented before the first element
+				// Prevent ArrayOutOfBounds if j is decremented before the first
+				// element
 				if (--j < begin) {
 					break;
 				}
