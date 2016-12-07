@@ -10,8 +10,36 @@ public class Heapsort {
 		// Not meant to be instantiated
 	}
 
+	public static void heapsort(int[] arr) {
+		if (arr == null) {
+			log.error("array must not be null");
+			throw new IllegalArgumentException();
+		}
+		int len = arr.length;
+		if (len == 0) {
+			log.error("array must not be empty");
+			throw new IllegalArgumentException();
+		}
+		if (len == 1) {
+			return;
+		}
+		// The following loop maintains the invariants that a[0:end] is a heap
+		// and every element
+		// beyond end is greater than everything before it (so a[end:len - 1] is
+		// in sorted order.
+		heapify(arr);
+		int end = len - 1;
+		while (end > 0) {
+			swap(arr, 0, end);
+			// the heap size is reduced by one
+			end--;
+			// the swap ruined the heap property, so restore it
+			siftDown(arr, 0, end);
+		}
+	}
+
 	/**
-	 * Put array elements in heap order, in-place
+	 * Put array elements in max heap order, in-place
 	 * 
 	 * @param arr
 	 */
@@ -19,16 +47,18 @@ public class Heapsort {
 		// Begin from the last parent node.
 		// the last element in a 0-based array is at index count-1; find the
 		// parent of that element
-		int begin = indexOfParent(arr.length - 1);
+		int len = arr.length;
+		int begin = indexOfParent(len - 1);
 		while (begin >= 0) {
 			// Sift down the node at index 'begin' to the proper place such
 			// that all nodes below
 			// the begin index are in heap order.
-			siftDown(arr, begin);
+			siftDown(arr, begin, len - 1);
 			// go to the next parent node
 			begin--;
 		}
 		// after sifting down the root all nodes are in heap order
+		log.debug("heapify: {}", toString(arr));
 	}
 
 	/**
@@ -37,31 +67,56 @@ public class Heapsort {
 	 * 
 	 * @param arr
 	 * @param begin
+	 *            begin index inclusive
+	 * @param end
+	 *            end index inclusive
 	 */
-	private static void siftDown(int[] arr, int begin) {
+	private static void siftDown(int[] arr, int begin, int end) {
+		if (arr == null) {
+			log.error("array must not be null");
+			throw new IllegalArgumentException();
+		}
 		int len = arr.length;
+		if (len == 0) {
+			log.error("array must not be empty");
+			throw new IllegalArgumentException();
+		}
+		if (begin < 0 || begin >= len) {
+			log.error("begin index out of bounds. [{}]", begin);
+			throw new IllegalArgumentException();
+		}
+		if (end < 0 || end >= len) {
+			log.error("end index out of bounds. [{}]", end);
+			throw new IllegalArgumentException();
+		}
+		if (begin >= end) {
+			return;
+		}
 		int root = begin;
-		int leftChild = indexOfLeftChild(root);
-		int rightChild;
-		while (leftChild < len) {
-			rightChild = leftChild + 1;
-			if (arr[root] < arr[leftChild]) {
-				swap(arr, root, leftChild);
-				root = leftChild;
-				leftChild = indexOfLeftChild(root);
-				// repeat to continue sifting down the child now
-				continue;
+		int child = indexOfLeftChild(root);
+		// Keeps track of child to swap with
+		int target = root;
+		while (child <= end) {
+			log.debug("arr[root]={}, arr[child]={}", arr[root], arr[child]);
+			if (arr[target] < arr[child]) {
+				target = child;
 			}
-			if (rightChild < len && arr[root] < arr[rightChild]) {
-				swap(arr, root, rightChild);
-				root = rightChild;
-				leftChild = indexOfLeftChild(root);
-				continue;
+			// If there is a right child and that child is greater
+			child++;
+			if (child <= end && arr[target] < arr[child]) {
+				target = child;
 			}
 			// The root holds the largest element. Since we assume the heaps
 			// rooted at the
 			// children are valid, this means that we are done.
-			return;
+			if (target == root) {
+				log.debug("siftDown: {}", toString(arr));
+				return;
+			}
+			// repeat to continue sifting down the child now
+			swap(arr, target, root);
+			root = target;
+			child = indexOfLeftChild(root);
 		}
 	}
 
@@ -81,12 +136,9 @@ public class Heapsort {
 		return 2 * i + 1;
 	}
 
+	@SuppressWarnings("unused")
 	private static int indexOfRightChild(int i) {
-		if (i < 0) {
-			log.error("index must not be less than zero");
-			throw new IllegalArgumentException();
-		}
-		return 2 * i + 2;
+		return indexOfLeftChild(i) + 1;
 	}
 
 	private static void swap(int[] arr, int index1, int index2) {
@@ -112,6 +164,18 @@ public class Heapsort {
 		int temp = arr[index1];
 		arr[index1] = arr[index2];
 		arr[index2] = temp;
+	}
+
+	private static String toString(int[] in) {
+		StringBuilder sb = new StringBuilder("[");
+		for (int i = 0; i < in.length; i++) {
+			sb.append(in[i]);
+			if (i != in.length - 1) {
+				sb.append(", ");
+			}
+		}
+		sb.append("]");
+		return sb.toString();
 	}
 
 }
