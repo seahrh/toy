@@ -31,7 +31,7 @@ public class ClockAngle {
 		int hangle = (int) (hour % 12 / 12D * 360);
 		int mangle = (int) (minute % 60 / 60D * 360);
 		int ret = Math.abs(hangle - mangle);
-		log.info("hour [{}] minute [{}] hangle [{}] mangle [{}] ret [{}]",
+		log.debug("hour [{}] minute [{}] hangle [{}] mangle [{}] ret [{}]",
 				hour, minute, hangle, mangle, ret);
 		return ret;
 	}
