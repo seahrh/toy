@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Heapsort {
-	private static final Logger log = LoggerFactory.getLogger(Quicksort.class);
+	private static final Logger log = LoggerFactory.getLogger(Heapsort.class);
 
 	private Heapsort() {
 		// Not meant to be instantiated
