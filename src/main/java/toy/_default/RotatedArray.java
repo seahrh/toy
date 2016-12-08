@@ -14,6 +14,73 @@ public class RotatedArray {
 	private RotatedArray() {
 		// Not meant to be instantiated
 	}
+	
+	public static int binarySearch(int[] arr, int key) {
+		if (arr == null) {
+			log.error("array must not be null");
+			throw new IllegalArgumentException();
+		}
+		int minIndex = min(arr);
+		return binarySearch(arr, 0, arr.length - 1, key, minIndex);
+	}
+
+	/**
+	 * Find element in a sorted but rotated array.
+	 * This algorithm still takes O(log n) time:
+	 * - finding the minimum takes O(log n) time,
+	 * - binary search also takes O(log n) time.
+	 * 
+	 * @param arr
+	 * @param begin
+	 *            begin index of the search range, inclusive
+	 * @param end
+	 *            end index of the search range, inclusive
+	 * @param minIndex
+	 *            index of the minimum element
+	 * @return index of key element, otherwise -1 if not found
+	 */
+	private static int binarySearch(int[] arr, int begin, int end, int key,
+			int minIndex) {
+		if (arr == null) {
+			log.error("array must not be null");
+			throw new IllegalArgumentException();
+		}
+		int len = arr.length;
+		if (len == 0) {
+			log.error("array must not be empty");
+			throw new IllegalArgumentException();
+		}
+		if (begin < 0) {
+			log.error("begin index out of bounds. [{}]", begin);
+			throw new IllegalArgumentException();
+		}
+		if (end >= len) {
+			log.error("end index out of bounds. [{}]", end);
+			throw new IllegalArgumentException();
+		}
+		if (minIndex < 0 || minIndex >= len) {
+			log.error("minIndex out of bounds. [{}]", minIndex);
+			throw new IllegalArgumentException();
+		}
+		// 1st base case: search range is empty
+		if (begin > end) {
+			return -1;
+		}
+		int mid = (end - begin) / 2 + begin;
+		int midv = arr[mid];
+		// 2nd base case: key found
+		if (midv == key) {
+			return mid;
+		}
+		if (key < midv) {
+			int result = binarySearch(arr, begin, mid - 1, key, minIndex);
+			if (result == -1 && minIndex > mid) {
+				result = binarySearch(arr, minIndex, end, key, minIndex);
+			}
+			return result;
+		}
+		return binarySearch(arr, mid + 1, end, key, minIndex);
+	}
 
 	public static int min(int[] arr) {
 		if (arr == null) {
@@ -28,10 +95,10 @@ public class RotatedArray {
 	 * 
 	 * @param arr
 	 * @param begin
-	 *            begin index of the search range
+	 *            begin index of the search range, inclusive
 	 * @param end
-	 *            end index of the search range
-	 * @return
+	 *            end index of the search range, inclusive
+	 * @return index of minimum element
 	 */
 	private static int minBinarySearch(int[] arr, int begin, int end) {
 		if (arr == null) {
@@ -43,11 +110,11 @@ public class RotatedArray {
 			log.error("array must not be empty");
 			throw new IllegalArgumentException();
 		}
-		if (begin < 0 || begin >= len) {
+		if (begin < 0) {
 			log.error("begin index out of bounds. [{}]", begin);
 			throw new IllegalArgumentException();
 		}
-		if (end < 0 || end >= len) {
+		if (end >= len) {
 			log.error("end index out of bounds. [{}]", end);
 			throw new IllegalArgumentException();
 		}
