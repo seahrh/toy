@@ -17,7 +17,7 @@ public class MergesortTest {
 	private static final Logger log = LoggerFactory.getLogger(MergesortTest.class);
 
 	@Test(dataProvider = "data")
-	public void test(int[] in, int[] expected, String description) {
+	public void mergesortTest(int[] in, int[] expected, String description) {
 		Mergesort.mergesort(in);
 		log.debug("\n\n{}\n\n", debug(in));
 		assertArrayEquals(expected, in);

@@ -27,7 +27,7 @@ public class BinarySearch {
 		if (midv == key) {
 			return mid;
 		}
-		if (midv > key) {
+		if (key < midv) {
 			return binarySearch(arr, begin, mid - 1, key);
 		}
 		return binarySearch(arr, mid + 1, end, key);

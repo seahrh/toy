@@ -9,7 +9,7 @@
 	<properties>
 		<app.id>gettehcode</app.id>
 		<app.version>v1-0-0</app.version>
-		<appengine.version>1.9.46</appengine.version>
+		<appengine.version>1.9.48</appengine.version>
 		<gcloud.plugin.version>2.0.9.118.v20160721</gcloud.plugin.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -74,7 +74,7 @@
 		<dependency>
 			<groupId>org.testng</groupId>
 			<artifactId>testng</artifactId>
-			<version>6.9.13.6</version>
+			<version>6.10</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
