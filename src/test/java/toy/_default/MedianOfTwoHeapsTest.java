@@ -23,6 +23,7 @@ public class MedianOfTwoHeapsTest {
 				{ new int[] {6, 5, 4, 3, 2, 1}, 3, "len 6 reverse sorted array" },
 				{ new int[] {6, 1, 7, 4, 2, 5, 3}, 4, "len 7 array" },
 				{ new int[] {6, 1, 7, 4, 2, 8, 5, 3}, 4, "len 8 array" },
+				{ new int[] {2, 2}, 2, "duplicates len 2" },
 				{ new int[] {2, 2, 2, 2}, 2, "duplicates len 4" },
 				{ new int[] {2, 2, 2, 2, 2}, 2, "duplicates len 5" },
 				{ new int[] {1, 2, 1, 2, 1}, 1, "duplicates 3x1 2x2" }, 
