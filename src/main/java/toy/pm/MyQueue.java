@@ -4,15 +4,13 @@ import java.util.Stack;
 
 /**
  * Implement a queue using 2 stacks. The head of the queue is at the top of the
- * primary stack. The second stack is used as a temporary placeholder.
+ * out stack. The in stack is used to hold new inserts.
  * <p>
- * Dequeueing and peeking at the head of the queue take O(1) time.
+ * Enqueueing takes O(1) time.
  * <p>
- * Enqueueing, however, takes O(n) time. First, (n - 1) elements are popped from
- * the primary stack and pushed to the temp stack. This empties the primary
- * stack. The newest element is pushed to the primary stack and now it has a
- * length of 1. Finally, (n - 1) elements are popped from the temp stack and
- * pushed to the primary stack, refilling it.
+ * Peek and dequeue take amortized constant time in the average case, and O(n)
+ * time in the worst case. When the out stack is empty, refill the out stack by
+ * popping the elements from the in stack and pushing them to the out stack.
  * <p>
  * The total length of both stacks will be n, where n is the length of the
  * queue. Thus, it takes O(n) space.
@@ -20,33 +18,37 @@ import java.util.Stack;
  * @param <T>
  */
 public class MyQueue<T> {
-	private Stack<T> stack = new Stack<>();
-	private Stack<T> temp = new Stack<>();
+	private Stack<T> out = new Stack<>();
+	private Stack<T> in = new Stack<>();
 
 	public MyQueue() {
 		// no-op
 	}
 
+	public int size() {
+		return in.size() + out.size();
+	}
+
 	public boolean isEmpty() {
-		return stack.empty();
+		return in.isEmpty() && out.isEmpty();
 	}
 
 	public T peek() {
-		return stack.peek();
+		if (out.isEmpty()) {
+			while (!in.isEmpty()) {
+				out.push(in.pop());
+			}
+		}
+		return out.peek();
 	}
 
 	public T pop() {
-		return stack.pop();
+		peek();
+		return out.pop();
 	}
 
 	public void push(T t) {
-		while (!stack.isEmpty()) {
-			temp.push(stack.pop());
-		}
-		stack.push(t);
-		while (!temp.empty()) {
-			stack.push(temp.pop());
-		}
+		in.push(t);
 	}
 
 }
