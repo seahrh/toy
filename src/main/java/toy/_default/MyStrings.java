@@ -11,6 +11,69 @@ public class MyStrings {
 	}
 
 	/**
+	 * Q1.4
+	 * <p>
+	 * Write a method that takes O(n) time to decide if two strings are anagrams
+	 * or not.
+	 * <p>
+	 * This takes O(n) time and O(1) space.
+	 * <p>
+	 * Assume charset is UTF-8 English only.
+	 * 
+	 * @param s
+	 * @param t
+	 * @return
+	 */
+	public static boolean isAnagram(String s, String t) {
+		if (s == null) {
+			log.error("string s must not be null");
+			throw new IllegalArgumentException();
+		}
+		int slen = s.length();
+		if (slen == 0) {
+			log.error("string s must not be empty");
+			throw new IllegalArgumentException();
+		}
+		if (t == null) {
+			log.error("string t must not be null");
+			throw new IllegalArgumentException();
+		}
+		int tlen = t.length();
+		if (tlen == 0) {
+			log.error("string t must not be empty");
+			throw new IllegalArgumentException();
+		}
+		if (slen != tlen) {
+			return false;
+		}
+		int[] counts = new int[256];
+		int uniqueCount = 0;
+		int tCompletedCount = 0;
+		int codePoint;
+		for (int i = 0; i < slen; i++) {
+			codePoint = s.codePointAt(i);
+			if (counts[codePoint] == 0) {
+				uniqueCount++;
+			}
+			counts[codePoint]++;
+		}
+		for (int i = 0; i < tlen; i++) {
+			codePoint = t.codePointAt(i);
+			if (counts[codePoint] == 0) {
+				return false;
+			}
+			counts[codePoint]--;
+			if (counts[codePoint] == 0) {
+				tCompletedCount++;
+				if (tCompletedCount == uniqueCount) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Q1.3
 	 * <p>
 	 * Design an algorithm and write code to remove the duplicate characters in
@@ -18,6 +81,8 @@ public class MyStrings {
 	 * variables are fine. An extra copy of the array is not.
 	 * <p>
 	 * This takes O(n) time and O(1) space.
+	 * <p>
+	 * Assume charset is UTF-8 English only.
 	 * 
 	 * @param s
 	 * @return

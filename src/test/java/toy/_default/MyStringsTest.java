@@ -7,6 +7,22 @@ import org.testng.annotations.Test;
 
 public class MyStringsTest {
 
+	@Test(dataProvider = "isAnagramData")
+	public void isAnagramTest(String s, String t, boolean expected,
+			String description) {
+		boolean actual = MyStrings.isAnagram(s, t);
+		assertEquals(actual, expected);
+	}
+
+	@DataProvider
+	public Object[][] isAnagramData() {
+		return new Object[][] { { "a", "a", true, "len 1 string" },
+				{ "a", "b", false, "len 1 string" },
+				{ "abcd", "bcda", true, "anagram with all unique chars" }, 
+				{ "abbcccd", "cdbacbc", true, "anagram with duplicate chars" },
+				{ "abbcccd", "cdbacbce", false, "unequal length strings" } };
+	}
+
 	@Test(dataProvider = "removeDuplicatesData")
 	public void removeDuplicatesTest(String in, String expected,
 			String description) {
