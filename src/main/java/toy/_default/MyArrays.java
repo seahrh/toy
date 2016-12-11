@@ -11,7 +11,11 @@ public class MyArrays {
 	}
 	
 	/**
-	 * 
+	 * Q1.6
+	 * <p>
+	 * Rotate by +90: Transpose, then reverse each row.
+	 * <p>
+	 * This takes O(n^2) time and O(1) space
 	 * 
 	 * @param arr
 	 */
@@ -20,11 +24,29 @@ public class MyArrays {
 		reverseRows(arr);
 	}
 	
+	/**
+	 * Q1.6
+	 * <p>
+	 * Rotate by -90: Transpose, then reverse each column.
+	 * <p>
+	 * This takes O(n^2) time and O(1) space
+	 * 
+	 * @param arr
+	 */
 	public static void rotate90DegreesLeft(int[][] arr) {
 		transpose(arr);
 		reverseColumns(arr);
 	}
 	
+	/**
+	 * Q1.6
+	 * <p>
+	 * Reverse each row and then reverse each column.
+	 * <p>
+	 * This takes O(n^2) time and O(1) space
+	 * 
+	 * @param arr
+	 */
 	public static void rotate180Degrees(int[][] arr) {
 		reverseRows(arr);
 		reverseColumns(arr);
