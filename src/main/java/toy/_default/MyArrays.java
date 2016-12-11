@@ -10,6 +10,87 @@ public class MyArrays {
 		// Not meant to be instantiated
 	}
 	
+	/**
+	 * 
+	 * 
+	 * @param arr
+	 */
+	public static void rotate90DegreesRight(int[][] arr) {
+		transpose(arr);
+		reverseRows(arr);
+	}
+	
+	public static void rotate90DegreesLeft(int[][] arr) {
+		transpose(arr);
+		reverseColumns(arr);
+	}
+	
+	public static void rotate180Degrees(int[][] arr) {
+		reverseRows(arr);
+		reverseColumns(arr);
+	}
+	
+	public static void reverseColumns(int[][] arr) {
+		if (arr == null) {
+			log.error("array must not be null");
+			throw new IllegalArgumentException();
+		}
+		int rows = arr.length;
+		if (rows == 0) {
+			log.error("array must not be empty");
+			throw new IllegalArgumentException();
+		}
+		int cols = arr[0].length;
+		int i;
+		int j;
+		for (int k = 0; k < cols; k++) {
+			i = 0;
+			j = rows - 1;
+			while (i < j) {
+				swap(arr, i, k, j, k);
+				i++;
+				j--;
+			}
+		}
+	}
+	
+	public static void reverseRows(int[][] arr) {
+		if (arr == null) {
+			log.error("array must not be null");
+			throw new IllegalArgumentException();
+		}
+		int rows = arr.length;
+		if (rows == 0) {
+			log.error("array must not be empty");
+			throw new IllegalArgumentException();
+		}
+		for (int i = 0; i < rows; i++) {
+			reverse(arr[i]);
+		}
+	}
+	
+	public static void reverse(int[] arr) {
+		if (arr == null) {
+			log.error("array must not be null");
+			throw new IllegalArgumentException();
+		}
+		int len = arr.length;
+		if (len == 0) {
+			log.error("array must not be empty");
+			throw new IllegalArgumentException();
+		}
+		if (len == 1) {
+			return;
+		}
+		int i = 0;
+		int j = len - 1;
+		while (i < j) {
+			swap(arr, i, j);
+			i++;
+			j--;
+		}
+	}
+	
 	public static void transpose(int[][] arr) {
 		if (arr == null) {
 			log.error("array must not be null");
