@@ -5,11 +5,11 @@ import static org.testng.Assert.assertEquals;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-public class FacebookQ1Test {
+public class SequenceSumTest {
 
 	@Test(dataProvider = "data")
 	public void test(int[] a, int t, boolean expected, String description) {
-		boolean actual = FacebookQ1.containsSequenceSum(a, t);
+		boolean actual = SequenceSum.contains(a, t);
 		assertEquals(actual, expected);
 	}
 

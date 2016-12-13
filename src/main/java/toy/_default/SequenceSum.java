@@ -16,44 +16,47 @@ import org.slf4j.LoggerFactory;
  ----------------------------------------------------
  */
 
-public final class FacebookQ1 {
-	private static final Logger log = LoggerFactory.getLogger(FacebookQ1.class);
+public final class SequenceSum {
+	private static final Logger log = LoggerFactory.getLogger(SequenceSum.class);
 
-	private FacebookQ1() {
+	private SequenceSum() {
 		// Not meant to be instantiated
 	}
 
-	public static boolean containsSequenceSum(int[] a, int t) {
-		if (a == null || a.length == 0) {
+	/**
+	 * O(n) solution based on @url https://www.careercup.com/question?id=6305076727513088
+	 * 
+	 * @param arr
+	 * @param target
+	 * @return
+	 */
+	public static boolean contains(int[] arr, int target) {
+		if (arr == null) {
+			log.error("array must not be null");
 			throw new IllegalArgumentException();
 		}
-		if (t < 1) {
+		int len = arr.length;
+		if (len == 0) {
+			log.error("array must not be empty");
 			throw new IllegalArgumentException();
 		}
+		if (target < 1) {
+			log.error("target sum must not be less than or equal to zero");
+			throw new IllegalArgumentException();
+		}
+		// i is the begin index of the summation window
+		// j is the end index of the summation window
 		int sum = 0;
-		int sumStartAt = 0;
-		for (int i = 0; i < a.length; i++) {
-			log.debug("i [{}], sum[{}], sumStartAt [{}]", i, sum, sumStartAt);
-			if (a[i] == t) {
+		int j = 0;
+		for (int i = 0; i < len; ++i) {
+			while (j < len && sum < target) {
+				sum += arr[j];
+				j++;
+			}
+			if (sum == target) {
 				return true;
 			}
-			if (sum == 0) {
-				sumStartAt = i;
-			}
-			sum += a[i];
-			if (sum == t) {
-				return true;
-			}
-			if (sum < t) {
-				continue;
-			}
-			while (sum > t) {
-				sum -= a[sumStartAt];
-				sumStartAt++;
-			}
-			if (sum == t) {
-				return true;
-			}
+			sum -= arr[i];
 		}
 		return false;
 	}
