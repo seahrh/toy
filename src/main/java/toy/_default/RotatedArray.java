@@ -5,7 +5,14 @@ import org.slf4j.LoggerFactory;
 
 /**
  * A sorted array has been rotated so that the elements might appear in the
- * order 3 4 5 6 7 1 2.
+ * order 3 4 5 6 7 1 2. Assume no duplicates (otherwise a O(log n) time solution
+ * is not achievable).
+ * <p>
+ * First, we know that it is a sorted array that’s been rotated. Although we do
+ * not know where the rotation pivot is, there is a property we can take
+ * advantage of. Here, we make an observation that a rotated array can be
+ * classified as two sub-array that is sorted (i.e., 4 5 6 7 0 1 2 consists of
+ * two sub-arrays 4 5 6 7 and 0 1 2.
  * 
  */
 public class RotatedArray {
@@ -15,19 +22,8 @@ public class RotatedArray {
 		// Not meant to be instantiated
 	}
 
-	public static int binarySearch(int[] arr, int key) {
-		if (arr == null || arr.length == 0) {
-			log.error("array must not be null or empty");
-			throw new IllegalArgumentException();
-		}
-		int minIndex = min(arr);
-		return binarySearch(arr, 0, arr.length - 1, key, minIndex);
-	}
-
 	/**
-	 * Find element in a sorted but rotated array. This algorithm still takes
-	 * O(log n) time: - finding the minimum takes O(log n) time, - binary search
-	 * also takes O(log n) time.
+	 * Find element in a sorted but rotated array. 
 	 * 
 	 * @param arr
 	 * @param begin
@@ -38,67 +34,48 @@ public class RotatedArray {
 	 *            index of the minimum element
 	 * @return index of key element, otherwise -1 if not found
 	 */
-	private static int binarySearch(int[] arr, int begin, int end, int key,
-			int minIndex) {
-		if (arr == null || arr.length == 0) {
-			log.error("array must not be null or empty");
+	public static int rotatedBinarySearch(int[] arr, int key) {
+		if (arr == null) {
+			log.error("array must not be null");
 			throw new IllegalArgumentException();
 		}
 		int len = arr.length;
-		if (begin < 0) {
-			log.error("begin index out of bounds. [{}]", begin);
+		if (len == 0) {
+			log.error("array must not be empty");
 			throw new IllegalArgumentException();
 		}
-		if (end >= len) {
-			log.error("end index out of bounds. [{}]", end);
-			throw new IllegalArgumentException();
-		}
-		if (minIndex < 0 || minIndex >= len) {
-			log.error("minIndex out of bounds. [{}]", minIndex);
-			throw new IllegalArgumentException();
-		}
-		// 1st base case: search range is empty
-		if (begin > end) {
-			return -1;
-		}
-		int mid = (end - begin) / 2 + begin;
-		int midv = arr[mid];
-		// 2nd base case: key found
-		if (midv == key) {
-			return mid;
-		}
-		int ret = -1;
-		if (key < midv) {
-			// Search left partition
-			ret = binarySearch(arr, begin, mid - 1, key, minIndex);
-			// If left partition does not contain the key and the minimum
-			// element,
-			// search the range between the minimum element and end index.
-			if (ret == -1 && minIndex > mid) {
-				ret = binarySearch(arr, minIndex, end, key, minIndex);
+		int lo = 0;
+		int hi = len - 1;
+		int mid;
+		while (lo <= hi) {
+			mid = (hi - lo) / 2 + lo;
+			if (arr[mid] == key) {
+				return mid;
 			}
-			return ret;
+			// Left partition is sorted
+			if (arr[lo] <= arr[mid]) {
+				if (arr[lo] <= key && key < arr[mid]) {
+					hi = mid - 1;
+				} else {
+					lo = mid + 1;
+				}
+			} else {
+				// Right partition is sorted
+				if (arr[mid] < key && key <= arr[hi]) {
+					lo = mid + 1;
+				} else {
+					hi = mid - 1;
+				}
+			}
 		}
-		// Search right partition
-		ret = binarySearch(arr, mid + 1, end, key, minIndex);
-		// If right partition does not contain the key and the minimum element,
-		// search the range between the begin index and minimum element.
-		if (ret == -1 && minIndex < mid) {
-			ret = binarySearch(arr, begin, minIndex, key, minIndex);
-		}
-		return ret;
-	}
-
-	public static int min(int[] arr) {
-		if (arr == null || arr.length == 0) {
-			log.error("array must not be null or empty");
-			throw new IllegalArgumentException();
-		}
-		return minBinarySearch(arr, 0, arr.length - 1);
+		return -1;
 	}
 
 	/**
 	 * Find minimum element in a sorted but rotated array.
+	 * <p>
+	 * Solution is a modified version of binary search. This takes O(log n) time
+	 * if there are no duplicates.
 	 * 
 	 * @param arr
 	 * @param begin
@@ -107,36 +84,29 @@ public class RotatedArray {
 	 *            end index of the search range, inclusive
 	 * @return index of minimum element
 	 */
-	private static int minBinarySearch(int[] arr, int begin, int end) {
-		if (arr == null || arr.length == 0) {
-			log.error("array must not be null or empty");
+	public static int indexOfMin(int[] arr) {
+		if (arr == null) {
+			log.error("array must not be null");
 			throw new IllegalArgumentException();
 		}
 		int len = arr.length;
-		if (begin < 0) {
-			log.error("begin index out of bounds. [{}]", begin);
+		if (len == 0) {
+			log.error("array must not be empty");
 			throw new IllegalArgumentException();
 		}
-		if (end >= len) {
-			log.error("end index out of bounds. [{}]", end);
-			throw new IllegalArgumentException();
+		int lo = 0;
+		int hi = len - 1;
+		int mid;
+		// Look for min in the unsorted partition
+		while (arr[lo] > arr[hi]) {
+			mid = (hi - lo) / 2 + lo;
+			if (arr[mid] > arr[hi]) {
+				lo = mid + 1;
+			} else {
+				hi = mid;
+			}
 		}
-		// 1st base case: only 1 element in search range
-		if (begin >= end) {
-			return begin;
-		}
-		// Avoid integer overflow
-		int mid = (end - begin) / 2 + begin;
-		log.debug("mid [{}]", mid);
-		// Include the middle element in search range!
-		// Because it could be the min.
-		if (arr[mid] < arr[0]) {
-			return minBinarySearch(arr, begin, mid);
-		}
-		// Search the right partition if
-		// mid element is greater than or equals begin element.
-		// Exclude the middle element in search range.
-		return minBinarySearch(arr, mid + 1, end);
+		return lo;
 	}
 
 }

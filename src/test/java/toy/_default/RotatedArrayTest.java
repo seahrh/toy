@@ -8,7 +8,7 @@ import org.testng.annotations.Test;
 public class RotatedArrayTest {
 	@Test(dataProvider = "minData")
 	public void minTest(int[] in, int expected, String description) {
-		int actual = RotatedArray.min(in);
+		int actual = RotatedArray.indexOfMin(in);
 		assertEquals(actual, expected);
 	}
 
@@ -26,7 +26,7 @@ public class RotatedArrayTest {
 	
 	@Test(dataProvider = "binarySearchData")
 	public void binarySearchTest(int[] in, int key, int expected, String description) {
-		int actual = RotatedArray.binarySearch(in, key);
+		int actual = RotatedArray.rotatedBinarySearch(in, key);
 		assertEquals(actual, expected);
 	}
 
