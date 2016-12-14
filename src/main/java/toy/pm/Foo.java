@@ -1,5 +1,7 @@
 package toy.pm;
 
+import java.util.concurrent.Semaphore;
+
 /**
  * Order of method calls are enforced using semaphores. Threads access
  * semaphores sequentially through synchronised methods (no interleaving is
@@ -11,36 +13,27 @@ package toy.pm;
  */
 public class Foo {
 
-	/**
-	 * Semaphore that controls access to second()
-	 */
-	private boolean isSecondLocked = true;
-	/**
-	 * Semaphore that controls access to third()
-	 */
-	private boolean isThirdLocked = true;
+	private Semaphore firstLock = new Semaphore(0);
+	private Semaphore secondLock = new Semaphore(0);
+	private Semaphore thirdLock = new Semaphore(1);
 
 	public Foo() {
 		// stub
 	}
 
-	public synchronized void first() {
-		isSecondLocked = false;
+	public synchronized void first() throws InterruptedException {
+		thirdLock.acquire();
+		firstLock.release();
 	}
 
-	public synchronized void second() {
-		if (isSecondLocked) {
-			throw new IllegalStateException(
-					"first() must be called before second()");
-		}
-		isThirdLocked = false;
+	public synchronized void second() throws InterruptedException {
+		firstLock.acquire();
+		secondLock.release();
 	}
 
-	public synchronized void third() {
-		if (isThirdLocked) {
-			throw new IllegalStateException(
-					"second() must be called before third()");
-		}
+	public synchronized void third() throws InterruptedException {
+		secondLock.acquire();
+		thirdLock.release();
 	}
 
 }
