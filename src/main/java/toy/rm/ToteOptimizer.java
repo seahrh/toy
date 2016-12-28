@@ -38,9 +38,12 @@ public final class ToteOptimizer {
 		TreeMultimap<Double, Product> orderByPriceToVolumeRatioDescendingAndVolume = products.orderByPriceToVolumeRatioDescendingAndVolume();
 		TreeMultimap<Integer, Product> orderByVolumeAndWeight = products.orderByVolumeAndWeight();
 		Product p;
+		Double priceToVolumeRatio;
 		int volume;
 		for (Map.Entry<Double, Product> entry : orderByPriceToVolumeRatioDescendingAndVolume.entries()) {
 			p = entry.getValue();
+			priceToVolumeRatio = entry.getKey();
+			log.debug("priceToVolumeRatio [{}] {}", priceToVolumeRatio, p);
 			volume = p.volume();
 			if (sumVolume + volume > TOTE_CAPACITY) {
 				continue;
@@ -48,29 +51,34 @@ public final class ToteOptimizer {
 			sumVolume += volume;
 			temp.add(p);
 		}
+		boolean isOtherProductAdded = false;
 		SortedSet<Product> sameVolume;
 		for (Product thisp : temp) {
-			tote.add(thisp);
+			isOtherProductAdded = false;
 			sameVolume = orderByVolumeAndWeight.get(thisp.volume());
 			for (Product otherp : sameVolume) {
 				if (otherp.weight() < thisp.weight() && otherp.price() >= thisp.price()) {
-					tote.remove(thisp);
+					isOtherProductAdded = true;
+					log.info("isOtherProductAdded [true]");
 					tote.add(otherp);
 					break;
 				}
+			}
+			if (!isOtherProductAdded) {
+				tote.add(thisp);
 			}
 		}
 		int sumIds = 0;
 		sumVolume = 0;
 		int sumWeight = 0;
 		int sumPrice = 0;
-		log.info("tote contains {} products:", tote.size());
+		log.debug("tote contains {} products:", tote.size());
 		for (Product thisp : tote) {
-			log.info("{}", thisp);
+			log.debug("{}", thisp);
 			sumIds += thisp.id();
 			sumVolume += thisp.volume();
 			sumWeight += thisp.weight();
-			sumPrice += thisp.weight();
+			sumPrice += thisp.price();
 		}
 		log.info("sumOfIds [{}] price [{}] volume [{}/{}] weight [{}]", sumIds, sumPrice, sumVolume,
 				TOTE_CAPACITY, sumWeight);
