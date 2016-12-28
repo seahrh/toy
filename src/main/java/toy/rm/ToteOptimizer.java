@@ -4,8 +4,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,37 +31,60 @@ public final class ToteOptimizer {
 	}
 
 	public static void main(String[] args) throws IOException {
-		int sumOfIds = 0;
-		int volume = 0;
-		int weight = 0;
-		TreeMultimap<Double, Product> products = rankedProducts();
-		Double rank;
+		int sumVolume = 0;
+		Set<Product> tote = new HashSet<>();
+		Set<Product> temp = new HashSet<>();
+		Products products = products();
+		TreeMultimap<Double, Product> orderByPriceToVolumeRatioDescendingAndVolume = products.orderByPriceToVolumeRatioDescendingAndVolume();
+		TreeMultimap<Integer, Product> orderByVolumeAndWeight = products.orderByVolumeAndWeight();
 		Product p;
-		int pvol;
-		for (Map.Entry<Double, Product> entry : products.entries()) {
-			rank = entry.getKey();
+		int volume;
+		for (Map.Entry<Double, Product> entry : orderByPriceToVolumeRatioDescendingAndVolume.entries()) {
 			p = entry.getValue();
-			log.debug("rank [{}] product:{}", rank, p);
-			pvol = p.volume();
-			if (volume + pvol > TOTE_CAPACITY) {
+			volume = p.volume();
+			if (sumVolume + volume > TOTE_CAPACITY) {
 				continue;
 			}
-			volume += pvol;
-			weight += p.weight();
-			sumOfIds += p.id();
+			sumVolume += volume;
+			temp.add(p);
 		}
-		log.info("sumOfIds [{}] volume [{}/{}] weight [{}]", sumOfIds, volume, TOTE_CAPACITY, weight);
+		SortedSet<Product> sameVolume;
+		for (Product thisp : temp) {
+			tote.add(thisp);
+			sameVolume = orderByVolumeAndWeight.get(thisp.volume());
+			for (Product otherp : sameVolume) {
+				if (otherp.weight() < thisp.weight() && otherp.price() >= thisp.price()) {
+					tote.remove(thisp);
+					tote.add(otherp);
+					break;
+				}
+			}
+		}
+		int sumIds = 0;
+		sumVolume = 0;
+		int sumWeight = 0;
+		int sumPrice = 0;
+		log.info("tote contains {} products:", tote.size());
+		for (Product thisp : tote) {
+			log.info("{}", thisp);
+			sumIds += thisp.id();
+			sumVolume += thisp.volume();
+			sumWeight += thisp.weight();
+			sumPrice += thisp.weight();
+		}
+		log.info("sumOfIds [{}] price [{}] volume [{}/{}] weight [{}]", sumIds, sumPrice, sumVolume,
+				TOTE_CAPACITY, sumWeight);
 	}
 
-	private static TreeMultimap<Double, Product> rankedProducts()
-			throws IOException {
+	private static Products products() throws IOException {
 		final int nTokens = 6;
 		int size;
 		String line;
 		List<String> tokens;
-		TreeMultimap<Double, Product> ret = TreeMultimap.create(
-				Ordering.natural()
-					.reverse(), Product.ORDER_BY_VOLUME);
+		TreeMultimap<Double, Product> orderByPriceToVolumeRatioDescendingAndVolume = TreeMultimap.create(
+				Ordering.natural().reverse(), Product.ORDER_BY_VOLUME);
+		TreeMultimap<Integer, Product> orderByVolumeAndWeight = TreeMultimap.create(
+				Ordering.natural(), Product.ORDER_BY_WEIGHT);
 		Product p;
 		File file = new File(INPUT_FILE_PATH);
 		BufferedReader br = null;
@@ -80,14 +106,15 @@ public final class ToteOptimizer {
 					.height(Integer.parseInt(tokens.get(4)))
 					.weight(Integer.parseInt(tokens.get(5)))
 					.build();
-				ret.put(p.priceToVolumeWeightRatio(), p);
+				orderByPriceToVolumeRatioDescendingAndVolume.put(p.priceToVolumeRatio(), p);
+				orderByVolumeAndWeight.put(p.volume(), p);
 			}
 		} finally {
 			if (br != null) {
 				br.close();
 			}
 		}
-		return ret;
+		return new Products(orderByPriceToVolumeRatioDescendingAndVolume, orderByVolumeAndWeight);
 	}
 
 }

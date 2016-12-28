@@ -11,12 +11,20 @@ public final class Product {
 	private static final Logger log = LoggerFactory.getLogger(Product.class);
 	protected static final Ordering<Product> ORDER_BY_VOLUME = Ordering.natural()
 		.nullsFirst()
-		.onResultOf(new Function<Product, Double>() {
-			public Double apply(Product p) {
-				return p.priceToVolumeWeightRatio();
+		.onResultOf(new Function<Product, Integer>() {
+			public Integer apply(Product p) {
+				return p.volume();
 			}
 		});
 	protected static final Ordering<Product> ORDER_BY_VOLUME_DESCENDING = ORDER_BY_VOLUME.reverse();
+	protected static final Ordering<Product> ORDER_BY_WEIGHT = Ordering.natural()
+		.nullsFirst()
+		.onResultOf(new Function<Product, Integer>() {
+			public Integer apply(Product p) {
+				return p.weight();
+			}
+		});
+	protected static final Ordering<Product> ORDER_BY_WEIGHT_DESCENDING = ORDER_BY_WEIGHT.reverse();
 	private int id = 0;
 	private int price = 0;
 	private int length = 0;
@@ -37,8 +45,8 @@ public final class Product {
 		return length * width * height;
 	}
 
-	protected double priceToVolumeWeightRatio() {
-		return 1000000D * price / (volume() * weight);
+	protected double priceToVolumeRatio() {
+		return (double) price / volume();
 	}
 
 	protected int id() {
@@ -64,7 +72,53 @@ public final class Product {
 	protected int weight() {
 		return weight;
 	}
-	
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + height;
+		result = prime * result + id;
+		result = prime * result + length;
+		result = prime * result + price;
+		result = prime * result + weight;
+		result = prime * result + width;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof Product)) {
+			return false;
+		}
+		Product other = (Product) obj;
+		if (height != other.height) {
+			return false;
+		}
+		if (id != other.id) {
+			return false;
+		}
+		if (length != other.length) {
+			return false;
+		}
+		if (price != other.price) {
+			return false;
+		}
+		if (weight != other.weight) {
+			return false;
+		}
+		if (width != other.width) {
+			return false;
+		}
+		return true;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
