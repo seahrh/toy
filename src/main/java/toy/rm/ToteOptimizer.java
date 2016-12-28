@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,23 +34,60 @@ public final class ToteOptimizer {
 	public static void main(String[] args) throws IOException {
 		int sumVolume = 0;
 		Set<Product> tote = new HashSet<>();
-		Set<Product> temp = new HashSet<>();
+		SortedSet<Product> temp = new TreeSet<>(
+				Product.ORDER_BY_PRICE_TO_VOLUME_RATIO);
+		Set<Product> toBeReplaced = new HashSet<>();
+		Set<Product> replacement = new HashSet<>();
+		int toBeReplacedValue = 0;
+		int replacementValue = 0;
 		Products products = products();
 		TreeMultimap<Double, Product> orderByPriceToVolumeRatioDescendingAndVolume = products.orderByPriceToVolumeRatioDescendingAndVolume();
 		TreeMultimap<Integer, Product> orderByVolumeAndWeight = products.orderByVolumeAndWeight();
 		Product p;
+		Product min;
 		Double priceToVolumeRatio;
 		int volume;
+		boolean doReplacement = false;
+		boolean end = false;
 		for (Map.Entry<Double, Product> entry : orderByPriceToVolumeRatioDescendingAndVolume.entries()) {
 			p = entry.getValue();
 			priceToVolumeRatio = entry.getKey();
 			log.debug("priceToVolumeRatio [{}] {}", priceToVolumeRatio, p);
 			volume = p.volume();
-			if (sumVolume + volume > TOTE_CAPACITY) {
-				continue;
+			while (sumVolume + volume > TOTE_CAPACITY) {
+				doReplacement = true;
+				if (replacementValue > toBeReplacedValue) {
+					end = true;
+					break;
+				}
+				if (temp.isEmpty()) {
+					end = true;
+					break;
+				}
+				min = temp.first();
+				temp.remove(min);
+				sumVolume -= min.volume();
+				toBeReplaced.add(min);
+				toBeReplacedValue += min.price();
+			}
+			if (end) {
+				break;
 			}
 			sumVolume += volume;
-			temp.add(p);
+			if (doReplacement) {
+				replacement.add(p);
+				replacementValue += p.price();
+			} else {
+				temp.add(p);
+				if (sumVolume == TOTE_CAPACITY) {
+					break;
+				}
+			}
+		}
+		if (replacementValue > toBeReplacedValue) {
+			temp.addAll(replacement);
+		} else {
+			temp.addAll(toBeReplaced);
 		}
 		boolean isOtherProductAdded = false;
 		SortedSet<Product> sameVolume;
@@ -57,9 +95,10 @@ public final class ToteOptimizer {
 			isOtherProductAdded = false;
 			sameVolume = orderByVolumeAndWeight.get(thisp.volume());
 			for (Product otherp : sameVolume) {
-				if (otherp.weight() < thisp.weight() && otherp.price() >= thisp.price()) {
+				if (otherp.weight() < thisp.weight()
+						&& otherp.price() >= thisp.price()) {
 					isOtherProductAdded = true;
-					log.info("isOtherProductAdded [true]");
+					log.debug("isOtherProductAdded [true]");
 					tote.add(otherp);
 					break;
 				}
@@ -72,7 +111,7 @@ public final class ToteOptimizer {
 		sumVolume = 0;
 		int sumWeight = 0;
 		int sumPrice = 0;
-		log.debug("tote contains {} products:", tote.size());
+		log.info("tote contains {} products:", tote.size());
 		for (Product thisp : tote) {
 			log.debug("{}", thisp);
 			sumIds += thisp.id();
@@ -80,8 +119,8 @@ public final class ToteOptimizer {
 			sumWeight += thisp.weight();
 			sumPrice += thisp.price();
 		}
-		log.info("sumOfIds [{}] price [{}] volume [{}/{}] weight [{}]", sumIds, sumPrice, sumVolume,
-				TOTE_CAPACITY, sumWeight);
+		log.info("sumOfIds [{}] price [{}] volume [{}/{}] weight [{}]", sumIds,
+				sumPrice, sumVolume, TOTE_CAPACITY, sumWeight);
 	}
 
 	private static Products products() throws IOException {
@@ -90,7 +129,8 @@ public final class ToteOptimizer {
 		String line;
 		List<String> tokens;
 		TreeMultimap<Double, Product> orderByPriceToVolumeRatioDescendingAndVolume = TreeMultimap.create(
-				Ordering.natural().reverse(), Product.ORDER_BY_VOLUME);
+				Ordering.natural()
+					.reverse(), Product.ORDER_BY_VOLUME);
 		TreeMultimap<Integer, Product> orderByVolumeAndWeight = TreeMultimap.create(
 				Ordering.natural(), Product.ORDER_BY_WEIGHT);
 		Product p;
@@ -114,7 +154,8 @@ public final class ToteOptimizer {
 					.height(Integer.parseInt(tokens.get(4)))
 					.weight(Integer.parseInt(tokens.get(5)))
 					.build();
-				orderByPriceToVolumeRatioDescendingAndVolume.put(p.priceToVolumeRatio(), p);
+				orderByPriceToVolumeRatioDescendingAndVolume.put(
+						p.priceToVolumeRatio(), p);
 				orderByVolumeAndWeight.put(p.volume(), p);
 			}
 		} finally {
@@ -122,7 +163,8 @@ public final class ToteOptimizer {
 				br.close();
 			}
 		}
-		return new Products(orderByPriceToVolumeRatioDescendingAndVolume, orderByVolumeAndWeight);
+		return new Products(orderByPriceToVolumeRatioDescendingAndVolume,
+				orderByVolumeAndWeight);
 	}
 
 }

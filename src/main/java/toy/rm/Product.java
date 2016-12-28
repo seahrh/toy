@@ -25,6 +25,14 @@ public final class Product {
 			}
 		});
 	protected static final Ordering<Product> ORDER_BY_WEIGHT_DESCENDING = ORDER_BY_WEIGHT.reverse();
+	protected static final Ordering<Product> ORDER_BY_PRICE_TO_VOLUME_RATIO = Ordering.natural()
+		.nullsFirst()
+		.onResultOf(new Function<Product, Double>() {
+			public Double apply(Product p) {
+				return p.priceToVolumeRatio();
+			}
+		});
+	protected static final Ordering<Product> ORDER_BY_PRICE_TO_VOLUME_RATIO_DESCENDING = ORDER_BY_PRICE_TO_VOLUME_RATIO.reverse();
 	private int id = 0;
 	private int price = 0;
 	private int length = 0;
