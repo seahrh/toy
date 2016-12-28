@@ -58,10 +58,17 @@ public final class ToteOptimizer {
 				doReplacement = true;
 				if (replacementValue > toBeReplacedValue) {
 					end = true;
+					log.info(
+							"Replacing {} products with {}\nTo be replaced: {}\nReplacement: {}",
+							toBeReplaced.size(), replacement.size(),
+							toBeReplaced, replacement);
+					temp.addAll(replacement);
 					break;
 				}
 				if (temp.isEmpty()) {
 					end = true;
+					log.info("No replacement");
+					temp.addAll(toBeReplaced);
 					break;
 				}
 				min = temp.first();
@@ -83,11 +90,6 @@ public final class ToteOptimizer {
 					break;
 				}
 			}
-		}
-		if (replacementValue > toBeReplacedValue) {
-			temp.addAll(replacement);
-		} else {
-			temp.addAll(toBeReplaced);
 		}
 		boolean isOtherProductAdded = false;
 		SortedSet<Product> sameVolume;
@@ -113,7 +115,7 @@ public final class ToteOptimizer {
 		int sumPrice = 0;
 		log.info("tote contains {} products:", tote.size());
 		for (Product thisp : tote) {
-			log.debug("{}", thisp);
+			log.info("{}", thisp);
 			sumIds += thisp.id();
 			sumVolume += thisp.volume();
 			sumWeight += thisp.weight();
