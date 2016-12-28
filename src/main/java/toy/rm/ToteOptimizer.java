@@ -33,64 +33,46 @@ public final class ToteOptimizer {
 
 	public static void main(String[] args) throws IOException {
 		int sumVolume = 0;
-		Set<Product> tote = new HashSet<>();
-		SortedSet<Product> temp = new TreeSet<>(
-				Product.ORDER_BY_PRICE_TO_VOLUME_RATIO);
-		Set<Product> toBeReplaced = new HashSet<>();
-		Set<Product> replacement = new HashSet<>();
-		int toBeReplacedValue = 0;
-		int replacementValue = 0;
+
+		Set<Product> temp = new HashSet<>();
 		Products products = products();
 		TreeMultimap<Double, Product> orderByPriceToVolumeRatioDescendingAndVolume = products.orderByPriceToVolumeRatioDescendingAndVolume();
 		TreeMultimap<Integer, Product> orderByVolumeAndWeight = products.orderByVolumeAndWeight();
 		Product p;
-		Product min;
 		Double priceToVolumeRatio;
 		int volume;
-		boolean doReplacement = false;
-		boolean end = false;
+		int sumPrice = 0;
 		for (Map.Entry<Double, Product> entry : orderByPriceToVolumeRatioDescendingAndVolume.entries()) {
 			p = entry.getValue();
 			priceToVolumeRatio = entry.getKey();
 			log.debug("priceToVolumeRatio [{}] {}", priceToVolumeRatio, p);
 			volume = p.volume();
-			while (sumVolume + volume > TOTE_CAPACITY) {
-				doReplacement = true;
-				if (replacementValue > toBeReplacedValue) {
-					end = true;
-					log.info(
-							"Replacing {} products with {}\nTo be replaced: {}\nReplacement: {}",
-							toBeReplaced.size(), replacement.size(),
-							toBeReplaced, replacement);
-					temp.addAll(replacement);
-					break;
-				}
-				if (temp.isEmpty()) {
-					end = true;
-					log.info("No replacement");
-					temp.addAll(toBeReplaced);
-					break;
-				}
-				min = temp.first();
-				temp.remove(min);
-				sumVolume -= min.volume();
-				toBeReplaced.add(min);
-				toBeReplacedValue += min.price();
-			}
-			if (end) {
-				break;
+			if (sumVolume + volume > TOTE_CAPACITY) {
+				continue;
 			}
 			sumVolume += volume;
-			if (doReplacement) {
-				replacement.add(p);
-				replacementValue += p.price();
-			} else {
-				temp.add(p);
-				if (sumVolume == TOTE_CAPACITY) {
-					break;
-				}
+			sumPrice += p.price();
+			temp.add(p);
+			if (sumVolume == TOTE_CAPACITY) {
+				break;
 			}
 		}
+		int sumIds = 0;
+		sumVolume = 0;
+		int sumWeight = 0;
+		sumPrice = 0;
+		log.info("tote contains {} products:", temp.size());
+		for (Product thisp : temp) {
+			log.info("{}", thisp);
+			sumIds += thisp.id();
+			sumVolume += thisp.volume();
+			sumWeight += thisp.weight();
+			sumPrice += thisp.price();
+		}
+		log.info("sumOfIds [{}] price [{}] volume [{}/{}] weight [{}]", sumIds,
+				sumPrice, sumVolume, TOTE_CAPACITY, sumWeight);
+
+		Set<Product> tote = new HashSet<>();
 		boolean isOtherProductAdded = false;
 		SortedSet<Product> sameVolume;
 		for (Product thisp : temp) {
@@ -98,21 +80,23 @@ public final class ToteOptimizer {
 			sameVolume = orderByVolumeAndWeight.get(thisp.volume());
 			for (Product otherp : sameVolume) {
 				if (otherp.weight() < thisp.weight()
-						&& otherp.price() >= thisp.price()) {
+						&& otherp.price() >= thisp.price()
+						&& !temp.contains(otherp)) {
 					isOtherProductAdded = true;
-					log.debug("isOtherProductAdded [true]");
+					log.info("isOtherProductAdded [true] id [{}]", otherp.id());
 					tote.add(otherp);
 					break;
 				}
 			}
 			if (!isOtherProductAdded) {
+				log.debug("isOtherProductAdded [false] id [{}]", thisp.id());
 				tote.add(thisp);
 			}
 		}
-		int sumIds = 0;
+		sumIds = 0;
 		sumVolume = 0;
-		int sumWeight = 0;
-		int sumPrice = 0;
+		sumWeight = 0;
+		sumPrice = 0;
 		log.info("tote contains {} products:", tote.size());
 		for (Product thisp : tote) {
 			log.info("{}", thisp);
