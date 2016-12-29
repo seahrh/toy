@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,91 +31,120 @@ public final class ToteOptimizer {
 	}
 
 	public static void main(String[] args) throws IOException {
-		int sumVolume = 0;
-
-		Set<Product> temp = new HashSet<>();
 		Products products = products();
-		TreeMultimap<Double, Product> orderByPriceToVolumeRatioDescendingAndVolume = products.orderByPriceToVolumeRatioDescendingAndVolume();
-		TreeMultimap<Integer, Product> orderByVolumeAndWeight = products.orderByVolumeAndWeight();
-		Product p;
-		Double priceToVolumeRatio;
-		int volume;
-		int sumPrice = 0;
-		for (Map.Entry<Double, Product> entry : orderByPriceToVolumeRatioDescendingAndVolume.entries()) {
-			p = entry.getValue();
-			priceToVolumeRatio = entry.getKey();
-			log.debug("priceToVolumeRatio [{}] {}", priceToVolumeRatio, p);
-			volume = p.volume();
-			if (sumVolume + volume > TOTE_CAPACITY) {
-				continue;
-			}
-			sumVolume += volume;
-			sumPrice += p.price();
-			temp.add(p);
-			if (sumVolume == TOTE_CAPACITY) {
-				break;
-			}
-		}
-		int sumIds = 0;
-		sumVolume = 0;
-		int sumWeight = 0;
-		sumPrice = 0;
-		log.info("tote contains {} products:", temp.size());
-		for (Product thisp : temp) {
-			log.info("{}", thisp);
-			sumIds += thisp.id();
-			sumVolume += thisp.volume();
-			sumWeight += thisp.weight();
-			sumPrice += thisp.price();
-		}
-		log.info("sumOfIds [{}] price [{}] volume [{}/{}] weight [{}]", sumIds,
-				sumPrice, sumVolume, TOTE_CAPACITY, sumWeight);
+		Set<Product> tote = pickHighPriceToVolumeRatio(products);
+		debug(tote);
+		tote = pickLowWeight(products, tote);
+		debug(tote);
+	}
 
-		Set<Product> tote = new HashSet<>();
+	/**
+	 * Optimise the picked products by picking another product that has a lower
+	 * weight for the same volume, without sacrificing the dollar value of the
+	 * tote.
+	 * 
+	 * @param products
+	 *            must not be null
+	 * @param picked
+	 *            must not be null or empty
+	 * @return picked items optimised by weight
+	 */
+	private static Set<Product> pickLowWeight(Products products,
+			Set<Product> picked) {
+		if (products == null) {
+			log.error("products must not be null");
+			throw new IllegalArgumentException();
+		}
+		if (picked == null || picked.isEmpty()) {
+			log.error("picked products must not be null or empty");
+			throw new IllegalArgumentException();
+		}
+		TreeMultimap<Integer, Product> orderByVolumeAndWeight = products.orderByVolumeAndWeight();
+		Set<Product> ret = new HashSet<>();
 		boolean isOtherProductAdded = false;
 		SortedSet<Product> sameVolume;
-		for (Product thisp : temp) {
+		for (Product thisp : picked) {
 			isOtherProductAdded = false;
 			sameVolume = orderByVolumeAndWeight.get(thisp.volume());
 			for (Product otherp : sameVolume) {
 				if (otherp.weight() < thisp.weight()
 						&& otherp.price() >= thisp.price()
-						&& !temp.contains(otherp)) {
+						&& !picked.contains(otherp)) {
 					isOtherProductAdded = true;
 					log.info("isOtherProductAdded [true] id [{}]", otherp.id());
-					tote.add(otherp);
+					ret.add(otherp);
 					break;
 				}
 			}
 			if (!isOtherProductAdded) {
 				log.debug("isOtherProductAdded [false] id [{}]", thisp.id());
-				tote.add(thisp);
+				ret.add(thisp);
 			}
 		}
-		sumIds = 0;
-		sumVolume = 0;
-		sumWeight = 0;
-		sumPrice = 0;
-		log.info("tote contains {} products:", tote.size());
-		for (Product thisp : tote) {
-			log.info("{}", thisp);
-			sumIds += thisp.id();
-			sumVolume += thisp.volume();
-			sumWeight += thisp.weight();
-			sumPrice += thisp.price();
-		}
-		log.info("sumOfIds [{}] price [{}] volume [{}/{}] weight [{}]", sumIds,
-				sumPrice, sumVolume, TOTE_CAPACITY, sumWeight);
+		return ret;
 	}
 
+	/**
+	 * Get hashtable where products are sorted by price-to-volume ratio
+	 * descending. Pick products with the highest price-to-volume ratio until
+	 * the tote is full.
+	 * 
+	 * @param products
+	 *            must not be null
+	 * @return picked products in the tote
+	 */
+	private static Set<Product> pickHighPriceToVolumeRatio(Products products) {
+		if (products == null) {
+			log.error("products must not be null");
+			throw new IllegalArgumentException();
+		}
+		Set<Product> ret = new HashSet<>();
+		TreeMultimap<Double, Product> orderByPriceToVolumeRatioDescendingAndVolume = products.orderByPriceToVolumeRatioDescendingAndVolume();
+		Product p;
+		Double priceToVolumeRatio;
+		int sumVolume = 0;
+		int volume;
+		for (Map.Entry<Double, Product> entry : orderByPriceToVolumeRatioDescendingAndVolume.entries()) {
+			p = entry.getValue();
+			priceToVolumeRatio = entry.getKey();
+			log.debug("priceToVolumeRatio [{}] {}", priceToVolumeRatio, p);
+			volume = p.volume();
+			// Keep looking for a product that will fit in the remaining
+			// capacity
+			if (sumVolume + volume > TOTE_CAPACITY) {
+				continue;
+			}
+			sumVolume += volume;
+			ret.add(p);
+			if (sumVolume == TOTE_CAPACITY) {
+				break;
+			}
+		}
+		return ret;
+	}
+
+	/**
+	 * Parse products file to objects
+	 * 
+	 * @return data object wrapping the products
+	 * @throws IOException
+	 */
 	private static Products products() throws IOException {
 		final int nTokens = 6;
 		int size;
 		String line;
 		List<String> tokens;
+		// Hashtable where products are sorted by price to volume ratio
+		// descending, then volume ascending.
+		// Use Guava's multimap because there could be multiple products with
+		// the same price-to-volume ratio.
 		TreeMultimap<Double, Product> orderByPriceToVolumeRatioDescendingAndVolume = TreeMultimap.create(
 				Ordering.natural()
 					.reverse(), Product.ORDER_BY_VOLUME);
+		// Hashtable where products are sorted by volume ascending, then weight
+		// ascending.
+		// Use Guava's multimap because there could be multiple products with
+		// the same volume.
 		TreeMultimap<Integer, Product> orderByVolumeAndWeight = TreeMultimap.create(
 				Ordering.natural(), Product.ORDER_BY_WEIGHT);
 		Product p;
@@ -151,6 +179,23 @@ public final class ToteOptimizer {
 		}
 		return new Products(orderByPriceToVolumeRatioDescendingAndVolume,
 				orderByVolumeAndWeight);
+	}
+
+	private static void debug(Set<Product> tote) {
+		int sumIds = 0;
+		int sumVolume = 0;
+		int sumWeight = 0;
+		int sumPrice = 0;
+		log.debug("tote contains {} products:", tote.size());
+		for (Product p : tote) {
+			log.debug("{}", p);
+			sumIds += p.id();
+			sumVolume += p.volume();
+			sumWeight += p.weight();
+			sumPrice += p.price();
+		}
+		log.info("sumOfIds [{}] price [{}] volume [{}/{}] weight [{}]", sumIds,
+				sumPrice, sumVolume, TOTE_CAPACITY, sumWeight);
 	}
 
 }

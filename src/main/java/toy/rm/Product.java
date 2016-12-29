@@ -6,6 +6,10 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Function;
 import com.google.common.collect.Ordering;
 
+/**
+ * Immutable object representing the product
+ *
+ */
 public final class Product {
 	@SuppressWarnings("unused")
 	private static final Logger log = LoggerFactory.getLogger(Product.class);
@@ -146,6 +150,10 @@ public final class Product {
 		return sb.toString();
 	}
 
+	/**
+	 * Implement the Builder pattern for Product class
+	 *
+	 */
 	public static class Builder {
 		private int id = 0;
 		private int price = 0;
