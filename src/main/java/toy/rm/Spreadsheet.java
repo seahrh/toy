@@ -29,6 +29,11 @@ public final class Spreadsheet {
 		output(sheet);
 	}
 
+	/**
+	 * Evaluates the spreadsheet row by row, then from left to right.
+	 * 
+	 * @param sheet
+	 */
 	private static void eval(String[][] sheet) {
 		String cell;
 		for (int i = 0; i < sheet.length; i++) {
@@ -42,12 +47,35 @@ public final class Spreadsheet {
 		}
 	}
 
+	/**
+	 * Initiate the evaluation by adding the first cell to a Set of
+	 * dependencies.
+	 * 
+	 * @param sheet
+	 * @param rowIndex
+	 * @param colIndex
+	 */
 	private static void eval(String[][] sheet, int rowIndex, int colIndex) {
 		Set<String> dependencies = new HashSet<>();
 		dependencies.add(toCellReference(rowIndex, colIndex));
 		eval(sheet, rowIndex, colIndex, dependencies);
 	}
 
+	/**
+	 * Recursively evaluate the expression.
+	 * <p>
+	 * Use only one stack to hold the operands (a variant of Djikstra's
+	 * two-stack algorithm). When an operator is encountered, pop the required
+	 * number of operands and perform the evaluation.
+	 * <p>
+	 * Detect cyclic dependencies by using a Set to hold visited cell
+	 * references.
+	 * 
+	 * @param sheet
+	 * @param rowIndex
+	 * @param colIndex
+	 * @param dependencies
+	 */
 	private static void eval(String[][] sheet, int rowIndex, int colIndex,
 			Set<String> dependencies) {
 		String expr = sheet[rowIndex][colIndex];
@@ -91,12 +119,14 @@ public final class Spreadsheet {
 				dependencies.add(token);
 				indices = toIndices(token);
 				eval(sheet, indices[0], indices[1], dependencies);
+				// Push the value of the cell reference back onto the stack!
 				operands.push(Double.parseDouble(sheet[indices[0]][indices[1]]));
 			} else {
 				// Push value onto the stack
 				operands.push(Double.parseDouble(token));
 			}
-			log.info("sheet[{}][{}]={}, operands={}", rowIndex, colIndex, token, operands);
+			log.info("sheet[{}][{}]={}, operands={}", rowIndex, colIndex,
+					token, operands);
 		}
 		sheet[rowIndex][colIndex] = String.valueOf(operands.pop());
 	}
