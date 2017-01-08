@@ -1,165 +1,104 @@
 package toy.rm;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Stack;
-import java.util.Set;
-import java.util.HashSet;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Spreadsheet {
+	private static final Logger log = LoggerFactory.getLogger(Spreadsheet.class);
+	private static final String INPUT_FILE_PATH = System.getProperty("toy.input");
+	private static final String OUTPUT_FILE_PATH = System.getProperty("toy.output");
 	private static final Pattern EXPRESSION_PATTERN = Pattern.compile("[ a-zA-Z]");
 	private static final String LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	private static Set<String> OPERATORS_ON_TWO_OPERANDS = new HashSet<>();
-	private static Set<String> OPERATORS_ON_ONE_OPERAND = new HashSet<>();
-
-	static {
-		OPERATORS_ON_TWO_OPERANDS.add("+");
-		OPERATORS_ON_TWO_OPERANDS.add("-");
-		OPERATORS_ON_TWO_OPERANDS.add("*");
-		OPERATORS_ON_TWO_OPERANDS.add("/");
-		OPERATORS_ON_ONE_OPERAND.add("++");
-		OPERATORS_ON_ONE_OPERAND.add("--");
-	}
 
 	public static void main(String[] args) throws IOException {
 		String[][] sheet = input();
-		compute(sheet);
-		print(sheet);
+		debug(sheet);
+		eval(sheet);
+		output(sheet);
 	}
 
-	// Idea: process the spreadsheet in one pass, row by row, then from left to
-	// right.
-	// Expressions, once evaluated, are written into the spreadsheet.
-	// The expression is tokenized, then the tokens are pushed into a stack,
-	// TAIL first.
-	// If the token is an operator, push it into the stack.
-	// If the token is a value and the top of stack is NOT an operator on two
-	// operands,
-	// then pop tokens off the stack for computation.
-
-	// Bug that I did not manage to fix in time, infinite loop.
-	// I update the spreadsheet once an expression is evaluated,
-	// not sure if this is causing the problem.
-
-	private static double compute(String[][] sheet, int targetRow,
-			int targetCol, int originRow, int originCol) {
-		String expr = sheet[targetRow][targetCol];
-		String[] tokens = expr.split(" ");
-		int i = tokens.length - 1;
-		Stack<String> stack = new Stack<>();
-		String token;
-		String firstOperand;
-		String secondOperand;
-		String operator;
-		double d;
-		while (i >= 0) {
-			token = tokens[i];
-			if (!isOperator(token)) {
-				firstOperand = token;
-				if (!stack.isEmpty()) {
-					token = stack.peek();
-					if (isOperatorOnOneOperand(token)) {
-						operator = stack.pop();
-						d = toDouble(firstOperand, sheet, originRow, originCol);
-						if (operator.equals("++")) {
-							d++;
-						} else if (operator.equals("--")) {
-							d--;
-						}
-						token = String.valueOf(d);
-					} else if (isOperatorOnTwoOperands(token)) {
-						token = firstOperand;
-					} else {
-						secondOperand = stack.pop();
-						operator = stack.pop();
-						d = compute(firstOperand, secondOperand, operator,
-								sheet, originRow, originCol);
-						token = String.valueOf(d);
-					}
-				}
-			}
-			stack.push(token);
-			i--;
-		}
-		if (stack.size() == 1) {
-			d = toDouble(stack.pop(), sheet, originRow, originCol);
-			sheet[targetRow][targetCol] = String.valueOf(d);
-			return d;
-		}
-		firstOperand = stack.pop();
-		secondOperand = stack.pop();
-		operator = stack.pop();
-		d = compute(firstOperand, secondOperand, operator, sheet, originRow,
-				originCol);
-		sheet[targetRow][targetCol] = String.valueOf(d);
-		return d;
-	}
-
-	private static double compute(String firstOperand, String secondOperand,
-			String operator, String[][] sheet, int originRow, int originCol) {
-		double d1 = toDouble(firstOperand, sheet, originRow, originCol);
-		double d2 = toDouble(secondOperand, sheet, originRow, originCol);
-		if (operator.equals("+")) {
-			return d1 + d2;
-		}
-		if (operator.equals("-")) {
-			return d1 - d2;
-		}
-		if (operator.equals("*")) {
-			return d1 * d2;
-		}
-		if (operator.equals("/")) {
-			return d1 / d2;
-		}
-		throw new IllegalStateException("Illegal operator");
-	}
-
-	private static double toDouble(String operand, String[][] sheet,
-			int originRow, int originCol) {
-		if (isCellReference(operand)) {
-			int[] indices = toIndices(operand);
-			if (indices[0] == originRow && indices[1] == originCol) {
-				System.err.println("Detected cyclic dependencies at row "
-						+ originRow + " col " + originCol);
-				System.exit(1);
-			}
-			operand = sheet[indices[0]][indices[1]];
-			if (isExpression(operand)) {
-				return compute(sheet, indices[0], indices[1], originRow,
-						originCol);
-			}
-		}
-		return Double.parseDouble(operand);
-	}
-
-	private static void compute(String[][] sheet) {
+	private static void eval(String[][] sheet) {
 		String cell;
 		for (int i = 0; i < sheet.length; i++) {
 			for (int j = 0; j < sheet[0].length; j++) {
 				cell = sheet[i][j];
 				if (!isExpression(cell)) {
-					sheet[i][j] = String.format("%.5f",
-							Double.parseDouble(cell));
 					continue;
 				}
-				sheet[i][j] = String.format("%.5f", compute(sheet, i, j, i, j));
+				eval(sheet, i, j);
 			}
 		}
 	}
 
-	private static boolean isOperatorOnOneOperand(String token) {
-		return OPERATORS_ON_ONE_OPERAND.contains(token);
+	private static void eval(String[][] sheet, int rowIndex, int colIndex) {
+		Set<String> dependencies = new HashSet<>();
+		dependencies.add(toCellReference(rowIndex, colIndex));
+		eval(sheet, rowIndex, colIndex, dependencies);
 	}
 
-	private static boolean isOperatorOnTwoOperands(String token) {
-		return OPERATORS_ON_TWO_OPERANDS.contains(token);
-	}
-
-	private static boolean isOperator(String token) {
-		return isOperatorOnTwoOperands(token) || isOperatorOnOneOperand(token);
+	private static void eval(String[][] sheet, int rowIndex, int colIndex,
+			Set<String> dependencies) {
+		String expr = sheet[rowIndex][colIndex];
+		String[] tokens = expr.split(" ");
+		Stack<Double> operands = new Stack<>();
+		double d1;
+		double d2;
+		int[] indices;
+		for (String token : tokens) {
+			if (token.equals("+")) {
+				d2 = operands.pop();
+				d1 = operands.pop();
+				operands.push(d1 + d2);
+			} else if (token.equals("-")) {
+				d2 = operands.pop();
+				d1 = operands.pop();
+				operands.push(d1 - d2);
+			} else if (token.equals("*")) {
+				d2 = operands.pop();
+				d1 = operands.pop();
+				operands.push(d1 * d2);
+			} else if (token.equals("/")) {
+				d2 = operands.pop();
+				d1 = operands.pop();
+				operands.push(d1 / d2);
+			} else if (token.equals("++")) {
+				d1 = operands.pop();
+				d1++;
+				operands.push(d1);
+			} else if (token.equals("--")) {
+				d1 = operands.pop();
+				d1--;
+				operands.push(d1);
+			} else if (isCellReference(token)) {
+				if (dependencies.contains(token)) {
+					log.error(
+							"Cyclic dependencies detected\nDuplicate={}\nDependencies={}",
+							token, dependencies);
+					throw new IllegalStateException();
+				}
+				dependencies.add(token);
+				indices = toIndices(token);
+				eval(sheet, indices[0], indices[1], dependencies);
+				operands.push(Double.parseDouble(sheet[indices[0]][indices[1]]));
+			} else {
+				// Push value onto the stack
+				operands.push(Double.parseDouble(token));
+			}
+			log.info("sheet[{}][{}]={}, operands={}", rowIndex, colIndex, token, operands);
+		}
+		sheet[rowIndex][colIndex] = String.valueOf(operands.pop());
 	}
 
 	private static boolean isCellReference(String operand) {
@@ -170,7 +109,7 @@ public final class Spreadsheet {
 	private static String toCellReference(int row, int col) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(LETTERS.charAt(row));
-		sb.append(col);
+		sb.append(++col);
 		return sb.toString();
 	}
 
@@ -178,7 +117,7 @@ public final class Spreadsheet {
 		char first = cellReference.charAt(0);
 		int row = LETTERS.indexOf(first);
 		int col = Integer.parseInt(cellReference.substring(1));
-		return new int[] { row, col };
+		return new int[] { row, --col };
 	}
 
 	private static boolean isExpression(String cell) {
@@ -186,16 +125,51 @@ public final class Spreadsheet {
 		return m.find();
 	}
 
+	private static File output(String[][] sheet) throws IOException {
+		BufferedWriter bw = null;
+		File file = new File(OUTPUT_FILE_PATH);
+		StringBuilder sb;
+		int n;
+		int m;
+		try {
+			bw = new BufferedWriter(new FileWriter(file));
+			n = sheet[0].length;
+			m = sheet.length;
+			sb = new StringBuilder();
+			sb.append(n);
+			sb.append(" ");
+			sb.append(m);
+			sb.append("\n");
+			bw.write(sb.toString());
+			for (int i = 0; i < m; i++) {
+				for (int j = 0; j < n; j++) {
+					sb = new StringBuilder();
+					sb.append(String.format("%.5f",
+							Double.parseDouble(sheet[i][j])));
+					sb.append("\n");
+					bw.write(sb.toString());
+				}
+			}
+		} finally {
+			if (bw != null) {
+				bw.close();
+			}
+		}
+		return file;
+	}
+
 	private static String[][] input() throws IOException {
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		String line = null;
+		BufferedReader br = null;
+		File file = new File(INPUT_FILE_PATH);
 		int width = 0;
 		int height = 0;
 		int n = 0;
 		int m = 0;
+		String line;
 		String[] tokens;
 		String[][] ret = null;
 		try {
+			br = new BufferedReader(new FileReader(file));
 			line = br.readLine();
 			tokens = line.split(" ");
 			width = Integer.parseInt(tokens[0]);
@@ -210,19 +184,19 @@ public final class Spreadsheet {
 				}
 			}
 		} finally {
-			br.close();
+			if (br != null) {
+				br.close();
+			}
 		}
 		return ret;
 	}
 
-	private static void print(String[][] sheet) {
+	private static void debug(String[][] sheet) {
 		int m = sheet.length;
 		int n = sheet[0].length;
-		System.out.println(String.format("%d %d", n, m));
 		for (int i = 0; i < m; i++) {
 			for (int j = 0; j < n; j++) {
-				System.out.println(sheet[i][j]);
-				// System.out.println(isExpression(sheet[i][j]));
+				log.info(sheet[i][j]);
 			}
 		}
 	}
