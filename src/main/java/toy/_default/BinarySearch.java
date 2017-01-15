@@ -11,6 +11,56 @@ public final class BinarySearch {
 	}
 	
 	/**
+	 * Search a sorted array of strings which is interspersed with empty strings.
+	 * <p>
+	 * [CTCI Q9.5]
+	 * <p>
+	 * Uses an iterative implementation of binary search.
+	 * 
+	 * @param arr
+	 * @param key
+	 * @return
+	 */
+	public static int searchArrayWithEmptyStrings(String[] arr, String key) {
+		if (arr == null || arr.length == 0) {
+			log.error("array must not be null or empty");
+			throw new IllegalArgumentException();
+		}
+		if (key == null || key.isEmpty()) {
+			log.error("key must not be null or empty");
+			throw new IllegalArgumentException();
+		}
+		int begin = 0;
+		int end = arr.length - 1;
+		int mid;
+		int cmp;
+		while (begin <= end) {
+			// Ensure there is something at the end
+			while (begin <= end && arr[end].isEmpty()) {
+				end--;
+			}
+			if (end < begin) {
+				return -1;
+			}
+			mid = (end - begin) / 2 + begin;
+			// Keep going right until a non-empty string is found
+			while (arr[mid].isEmpty()) {
+				mid++;
+			}
+			cmp = key.compareTo(arr[mid]);
+			if (cmp == 0) {
+				return mid;
+			}
+			if (cmp > 0) {
+				begin = mid + 1;
+			} else {
+				end = mid - 1;
+			}
+		}
+		return -1;
+	}
+	
+	/**
 	 * Binary search to get index of key.
 	 * If key is not found, return index of nearest value.
 	 * 

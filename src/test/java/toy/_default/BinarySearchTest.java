@@ -6,6 +6,25 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class BinarySearchTest {
+	@Test(dataProvider = "searchArrayWithEmptyStringsData")
+	public void searchArrayWithEmptyStringsTest(String[] arr, String key,
+			int expected, String description) {
+		int actual = BinarySearch.searchArrayWithEmptyStrings(arr, key);
+		assertEquals(actual, expected);
+	}
+
+	@DataProvider
+	public Object[][] searchArrayWithEmptyStringsData() {
+		final String[] arr1 = new String[] { "at", "", "", "", "ball", "", "",
+				"car", "", "", "dad", "", "" };
+		final String[] arr2 = new String[] { "at", "", "", "", "", "ball",
+				"car", "", "", "dad", "", "" };
+		return new Object[][] {
+				{ arr1, "ball", 4, "key found, given test case in CTCI Q9.5" },
+				{ arr2, "ballcar", -1,
+						"key not found, given test case in CTCI Q9.5" } };
+	}
+
 	@Test(dataProvider = "nearestData")
 	public void nearestTest(int[] in, int key, int expected, String description) {
 		int actual = BinarySearch.nearest(in, key);
