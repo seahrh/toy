@@ -9,7 +9,49 @@ public class MyArrays {
 	private MyArrays() {
 		// Not meant to be instantiated
 	}
-	
+
+	/**
+	 * Given a matrix in which each row and each column is sorted, find an
+	 * element in it. [CTCI Q9.6]
+	 * <p>
+	 * This algorithm works by elimination. Every move to the left (--col)
+	 * eliminates all the elements below the current cell in that column.
+	 * Likewise, every move down eliminates all the elements to the left of the
+	 * cell in that row.
+	 * <p>
+	 * This takes O(m+n) time and O(1) space.
+	 * 
+	 * @param matrix
+	 * @param key
+	 * @return
+	 */
+	public static int[] searchSortedMatrix(int[][] matrix, int key) {
+		if (matrix == null) {
+			log.error("matrix must not be null");
+			throw new IllegalArgumentException();
+		}
+		int rows = matrix.length;
+		if (rows == 0) {
+			log.error("matrix must not be empty");
+			throw new IllegalArgumentException();
+		}
+		int cols = matrix[0].length;
+		// Start searching from top right corner
+		int i = 0;
+		int j = cols - 1;
+		while (i < rows && j > -1) {
+			if (matrix[i][j] == key) {
+				return new int[] { i, j };
+			}
+			if (key < matrix[i][j]) {
+				j--;
+			} else {
+				i++;
+			}
+		}
+		return new int[] { -1, -1 };
+	}
+
 	/**
 	 * Q1.6
 	 * <p>
@@ -23,7 +65,7 @@ public class MyArrays {
 		transpose(arr);
 		reverseRows(arr);
 	}
-	
+
 	/**
 	 * Q1.6
 	 * <p>
@@ -37,7 +79,7 @@ public class MyArrays {
 		transpose(arr);
 		reverseColumns(arr);
 	}
-	
+
 	/**
 	 * Q1.6
 	 * <p>
@@ -51,7 +93,7 @@ public class MyArrays {
 		reverseRows(arr);
 		reverseColumns(arr);
 	}
-	
+
 	public static void reverseColumns(int[][] arr) {
 		if (arr == null) {
 			log.error("array must not be null");
@@ -75,7 +117,7 @@ public class MyArrays {
 			}
 		}
 	}
-	
+
 	public static void reverseRows(int[][] arr) {
 		if (arr == null) {
 			log.error("array must not be null");
@@ -90,7 +132,7 @@ public class MyArrays {
 			reverse(arr[i]);
 		}
 	}
-	
+
 	public static void reverse(int[] arr) {
 		if (arr == null) {
 			log.error("array must not be null");
@@ -112,7 +154,7 @@ public class MyArrays {
 			j--;
 		}
 	}
-	
+
 	public static void transpose(int[][] arr) {
 		if (arr == null) {
 			log.error("array must not be null");
@@ -136,7 +178,7 @@ public class MyArrays {
 			}
 		}
 	}
-	
+
 	public static void swap(int[][] arr, int i1, int j1, int i2, int j2) {
 		if (arr == null) {
 			log.error("array must not be null");
@@ -174,7 +216,7 @@ public class MyArrays {
 		arr[i1][j1] = arr[i2][j2];
 		arr[i2][j2] = temp;
 	}
-	
+
 	public static void swap(int[] arr, int i1, int i2) {
 		if (arr == null) {
 			log.error("array must not be null");

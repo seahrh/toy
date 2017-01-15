@@ -6,6 +6,30 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 public class MyArraysTest {
+	@Test(dataProvider = "searchSortedMatrixData")
+	public void searchSortedMatrixTest(int[][] matrix, int key, int[] expected,
+			String description) {
+		int[] actual = MyArrays.searchSortedMatrix(matrix, key);
+		assertArrayEquals(actual, expected);
+	}
+
+	@DataProvider
+	public Object[][] searchSortedMatrixData() {
+		final int[][] sq2x2 = new int[][] { { 1, 2 }, { 3, 4 } };
+		final int[][] rect3x4 = new int[][] { { 1, 2, 3, 4 },
+				{ 11, 12, 13, 14 }, { 21, 22, 23, 24 } };
+		return new Object[][] {
+				{ new int[][] { { 1 } }, 1, new int[] { 0, 0 },
+						"1x1 matrix, key found" },
+				{ new int[][] { { 1 } }, 2, new int[] { -1, -1 },
+						"1x1 matrix, key not found" },
+				{ sq2x2, 3, new int[] { 1, 0 }, "2x2 matrix, key found" },
+				{ sq2x2, 5, new int[] { -1, -1 }, "2x2 matrix, key not found" },
+				{ rect3x4, 12, new int[] { 1, 1 }, "3x4 matrix, key found" },
+				{ rect3x4, 10, new int[] { -1, -1 },
+						"3x4 matrix, key not found" } };
+	}
+
 	@Test(dataProvider = "rotate180DegreesData")
 	public void rotate180DegreesTest(int[][] in, int[][] expected,
 			String description) {
