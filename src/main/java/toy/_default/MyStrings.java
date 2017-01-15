@@ -11,14 +11,12 @@ public class MyStrings {
 	}
 
 	/**
-	 * Q1.4
-	 * <p>
 	 * Write a method that takes O(n) time to decide if two strings are anagrams
-	 * or not.
+	 * or not. [CTCI Q1.4]
 	 * <p>
 	 * This takes O(n) time and O(1) space.
 	 * <p>
-	 * Assume charset is UTF-8 English only.
+	 * Assume charset is UTF-8 ASCII values.
 	 * 
 	 * @param s
 	 * @param t
@@ -46,7 +44,7 @@ public class MyStrings {
 		if (slen != tlen) {
 			return false;
 		}
-		int[] counts = new int[256];
+		int[] counts = new int[128];
 		int uniqueCount = 0;
 		int tCompletedCount = 0;
 		int codePoint;
