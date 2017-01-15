@@ -23,7 +23,9 @@ public class RotatedArray {
 	}
 
 	/**
-	 * Find element in a sorted but rotated array. 
+	 * Find element in a sorted but rotated array with no duplicates.
+	 * <p>
+	 * Performs a modified version of binary search, so search takes O(lg n) time.
 	 * 
 	 * @param arr
 	 * @param begin
@@ -54,6 +56,7 @@ public class RotatedArray {
 			}
 			// Left partition is sorted
 			if (arr[lo] <= arr[mid]) {
+				// Key is inside the boundaries of the left partition
 				if (arr[lo] <= key && key < arr[mid]) {
 					hi = mid - 1;
 				} else {
@@ -61,6 +64,7 @@ public class RotatedArray {
 				}
 			} else {
 				// Right partition is sorted
+				// Key is inside the boundaries of the right partition
 				if (arr[mid] < key && key <= arr[hi]) {
 					lo = mid + 1;
 				} else {
@@ -78,10 +82,6 @@ public class RotatedArray {
 	 * if there are no duplicates.
 	 * 
 	 * @param arr
-	 * @param begin
-	 *            begin index of the search range, inclusive
-	 * @param end
-	 *            end index of the search range, inclusive
 	 * @return index of minimum element
 	 */
 	public static int indexOfMin(int[] arr) {
@@ -100,6 +100,7 @@ public class RotatedArray {
 		// Look for min in the unsorted partition
 		while (arr[lo] > arr[hi]) {
 			mid = (hi - lo) / 2 + lo;
+			// Right partition is unsorted
 			if (arr[mid] > arr[hi]) {
 				lo = mid + 1;
 			} else {
