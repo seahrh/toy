@@ -16,7 +16,7 @@ public class MyStrings {
 	 * <p>
 	 * This takes O(n) time and O(1) space.
 	 * <p>
-	 * Assume charset is UTF-8 ASCII values.
+	 * Assume charset is UTF-8 ASCII values only.
 	 * 
 	 * @param s
 	 * @param t
@@ -72,15 +72,14 @@ public class MyStrings {
 	}
 
 	/**
-	 * Q1.3
 	 * <p>
 	 * Design an algorithm and write code to remove the duplicate characters in
 	 * a string without using any additional buffer. NOTE: One or two additional
-	 * variables are fine. An extra copy of the array is not.
+	 * variables are fine. An extra copy of the array is not. [CTCI Q1.3]
 	 * <p>
 	 * This takes O(n) time and O(1) space.
 	 * <p>
-	 * Assume charset is UTF-8 English only.
+	 * Assume charset is UTF-8 ASCII values only.
 	 * 
 	 * @param s
 	 * @return
