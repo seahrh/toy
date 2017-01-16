@@ -24,9 +24,8 @@ public class Heapsort {
 			return;
 		}
 		// The following loop maintains the invariants that a[0:end] is a heap
-		// and every element
-		// beyond end is greater than everything before it (so a[end:len - 1] is
-		// in sorted order.
+		// and every element beyond end is greater than everything before it, so
+		// a[end:len - 1] is in sorted order.
 		heapify(arr);
 		int end = len - 1;
 		while (end > 0) {
@@ -81,11 +80,11 @@ public class Heapsort {
 			log.error("array must not be empty");
 			throw new IllegalArgumentException();
 		}
-		if (begin < 0 || begin >= len) {
+		if (begin < 0) {
 			log.error("begin index out of bounds. [{}]", begin);
 			throw new IllegalArgumentException();
 		}
-		if (end < 0 || end >= len) {
+		if (end >= len) {
 			log.error("end index out of bounds. [{}]", end);
 			throw new IllegalArgumentException();
 		}
