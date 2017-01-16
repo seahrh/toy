@@ -77,8 +77,7 @@ public class MedianOfTwoHeaps {
 			maxSize = maxHeap.size();
 			if (minSize > maxSize + 1) {
 				maxHeap.add(minHeap.remove());
-			}
-			if (maxSize > minSize + 1) {
+			} else if (maxSize > minSize + 1) {
 				minHeap.add(maxHeap.remove());
 			}
 		}
