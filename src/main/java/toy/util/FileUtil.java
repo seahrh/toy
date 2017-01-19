@@ -54,28 +54,43 @@ public final class FileUtil {
 	public static List<List<String>> read(String path, CharMatcher separator)
 			throws IOException {
 		int nHeaderRows = 0;
-		return read(path, separator, nHeaderRows);
+		// Preserve empty columns, by default
+		boolean omitEmptyStrings = false;
+		return read(path, separator, nHeaderRows, omitEmptyStrings);
 	}
 
 	public static List<List<String>> read(String path, CharMatcher separator,
 			int nHeaderRows) throws IOException {
+		boolean omitEmptyStrings = false;
+		return read(path, separator, nHeaderRows, omitEmptyStrings);
+	}
+	
+	public static List<List<String>> read(String path, CharMatcher separator,
+			int nHeaderRows, boolean omitEmptyStrings) throws IOException {
 		path = trim(path);
 		if (path.isEmpty()) {
 			log.error("path must not be null or empty string");
 			throw new IllegalArgumentException();
 		}
 		File file = new File(path);
-		return read(file, separator, nHeaderRows);
+		return read(file, separator, nHeaderRows, omitEmptyStrings);
 	}
 
 	public static List<List<String>> read(File file, CharMatcher separator)
 			throws IOException {
 		int nHeaderRows = 0;
-		return read(file, separator, nHeaderRows);
+		boolean omitEmptyStrings = false;
+		return read(file, separator, nHeaderRows, omitEmptyStrings);
+	}
+	
+	public static List<List<String>> read(File file, CharMatcher separator,
+			int nHeaderRows) throws IOException {
+		boolean omitEmptyStrings = false;
+		return read(file, separator, nHeaderRows, omitEmptyStrings);
 	}
 
 	public static List<List<String>> read(File file, CharMatcher separator,
-			int nHeaderRows) throws IOException {
+			int nHeaderRows, boolean omitEmptyStrings) throws IOException {
 		BufferedReader br = null;
 		if (file == null) {
 			log.error("file must not be null");
@@ -89,16 +104,11 @@ public final class FileUtil {
 		List<List<String>> ret = new ArrayList<>();
 		try {
 			br = new BufferedReader(new FileReader(file));
-
 			// Skip header rows
-
 			for (int i = 0; i < nHeaderRows; i++) {
 				br.readLine();
 			}
-
 			// Read main content
-			// Preserve empty columns as total #columns is important
-			boolean omitEmptyStrings = false;
 			while ((line = br.readLine()) != null) {
 				row = split(line, separator, omitEmptyStrings);
 				ret.add(row);
