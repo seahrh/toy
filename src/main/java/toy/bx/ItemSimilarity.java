@@ -41,6 +41,10 @@ public final class ItemSimilarity {
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Main: completed ({}s)", elapsedTime / 1000);
 	}
+	
+	private static void test() {
+		
+	}
 
 	private static Optional<Double> predict(String uid, String isbn) {
 		ImmutableMap<String, Integer> ratings = ratingTable.column(uid);
