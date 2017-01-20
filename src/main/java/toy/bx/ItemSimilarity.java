@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Sets;
@@ -30,6 +31,7 @@ public final class ItemSimilarity {
 	private static List<List<String>> testSet = new ArrayList<>(
 			(int) (TEST_PROPORTION * 1000000));
 	private static ImmutableTable<String, String, Double> simMatrix;
+	private static ImmutableTable<String, String, Integer> ratingTable;
 
 	public static void main(String[] args) throws IOException {
 		long startTime = System.currentTimeMillis();
@@ -38,6 +40,42 @@ public final class ItemSimilarity {
 		train();
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Main: completed ({}s)", elapsedTime / 1000);
+	}
+
+	private static Optional<Double> predict(String uid, String isbn) {
+		ImmutableMap<String, Integer> ratings = ratingTable.column(uid);
+		if (ratings.isEmpty()) {
+			// User has not rated any items, so cannot make prediction.
+			return Optional.absent();
+		}
+		Double ret;
+		Integer rating = ratings.get(isbn);
+		if (rating != null) {
+			log.warn(
+					"user has already rated this item, so no prediction was made.\nuid={} isbn={}",
+					uid, isbn);
+			return Optional.absent();
+		}
+		String ratedIsbn;
+		double nu = 0;
+		double de = 0;
+		Double sim;
+		for (Map.Entry<String, Integer> entry : ratings.entrySet()) {
+			ratedIsbn = entry.getKey();
+			rating = entry.getValue();
+			sim = simMatrix.get(isbn, ratedIsbn);
+			if (sim == null) {
+				sim = simMatrix.get(ratedIsbn, isbn);
+				if (sim == null) {
+					log.error("Similarity score is missing for isbn={}, ratedIsbn={}", isbn, ratedIsbn);
+					throw new IllegalStateException();
+				}
+			}
+			nu += sim * rating;
+			de += sim;
+		}
+		ret = nu / de;
+		return Optional.of(ret);
 	}
 
 	private static void train() throws IOException {
@@ -55,7 +93,7 @@ public final class ItemSimilarity {
 			rating = Integer.parseInt(tokens.get(2));
 			ratingTableBuilder.put(isbn, uid, rating);
 		}
-		ImmutableTable<String, String, Integer> ratingTable = ratingTableBuilder.build();
+		ratingTable = ratingTableBuilder.build();
 		ImmutableMap<String, Map<String, Integer>> itemMap = ratingTable.rowMap();
 		ImmutableTable.Builder<String, String, Double> simMatrixBuilder = ImmutableTable.builder();
 		Map<String, Integer> uidToRating;
@@ -82,8 +120,10 @@ public final class ItemSimilarity {
 					// No raters in common; skip
 					continue;
 				}
-				sim = cosineSimilarity(commonRaters, uidToRating, otherUidToRating);
-				log.info("sim={} isbn={} otherIsbn={}", sim.toString(), isbn, otherIsbn);
+				sim = cosineSimilarity(commonRaters, uidToRating,
+						otherUidToRating);
+				log.debug("sim={} isbn={} otherIsbn={}", sim.toString(), isbn,
+						otherIsbn);
 				simMatrixBuilder.put(isbn, otherIsbn, sim);
 			}
 		}
@@ -133,8 +173,9 @@ public final class ItemSimilarity {
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Extract: completed ({}s)", elapsedTime / 1000);
 	}
-	
-	private static List<List<String>> removeImplicitRatings(List<List<String>> ratings) {
+
+	private static List<List<String>> removeImplicitRatings(
+			List<List<String>> ratings) {
 		List<List<String>> ret = new ArrayList<>(ratings.size());
 		int rating;
 		for (List<String> tokens : ratings) {
