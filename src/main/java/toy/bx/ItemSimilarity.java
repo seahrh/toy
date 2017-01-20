@@ -1,8 +1,11 @@
 package toy.bx;
 
+import static toy.util.StringUtil.concat;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,7 +33,7 @@ public final class ItemSimilarity {
 			(int) (TRAIN_PROPORTION * 1000000));
 	private static List<List<String>> testSet = new ArrayList<>(
 			(int) (TEST_PROPORTION * 1000000));
-	private static ImmutableTable<String, String, Double> simMatrix;
+	private static Map<String, Double> simMatrix = new HashMap<>();
 	private static ImmutableTable<String, String, Integer> ratingTable;
 
 	public static void main(String[] args) throws IOException {
@@ -41,9 +44,9 @@ public final class ItemSimilarity {
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Main: completed ({}s)", elapsedTime / 1000);
 	}
-	
+
 	private static void test() {
-		
+
 	}
 
 	private static Optional<Double> predict(String uid, String isbn) {
@@ -67,13 +70,11 @@ public final class ItemSimilarity {
 		for (Map.Entry<String, Integer> entry : ratings.entrySet()) {
 			ratedIsbn = entry.getKey();
 			rating = entry.getValue();
-			sim = simMatrix.get(isbn, ratedIsbn);
+			sim = simMatrix.get(pairKey(isbn, ratedIsbn));
 			if (sim == null) {
-				sim = simMatrix.get(ratedIsbn, isbn);
-				if (sim == null) {
-					log.error("Similarity score is missing for isbn={}, ratedIsbn={}", isbn, ratedIsbn);
-					throw new IllegalStateException();
-				}
+				log.error("Similarity score is missing for item pair={},{}",
+						isbn, ratedIsbn);
+				throw new IllegalStateException();
 			}
 			nu += sim * rating;
 			de += sim;
@@ -99,7 +100,6 @@ public final class ItemSimilarity {
 		}
 		ratingTable = ratingTableBuilder.build();
 		ImmutableMap<String, Map<String, Integer>> itemMap = ratingTable.rowMap();
-		ImmutableTable.Builder<String, String, Double> simMatrixBuilder = ImmutableTable.builder();
 		Map<String, Integer> uidToRating;
 		Map<String, Integer> otherUidToRating;
 		Set<String> raters;
@@ -107,6 +107,7 @@ public final class ItemSimilarity {
 		Set<String> commonRaters;
 		Double sim;
 		String otherIsbn;
+		String pair;
 		for (Map.Entry<String, Map<String, Integer>> entry : itemMap.entrySet()) {
 			isbn = entry.getKey();
 			uidToRating = entry.getValue();
@@ -124,16 +125,28 @@ public final class ItemSimilarity {
 					// No raters in common; skip
 					continue;
 				}
+				pair = pairKey(isbn, otherIsbn);
+				sim = simMatrix.get(pair);
+				// Similarity score for this pair already exists; skip
+				if (sim != null) {
+					continue;
+				}
 				sim = cosineSimilarity(commonRaters, uidToRating,
 						otherUidToRating);
-				log.debug("sim={} isbn={} otherIsbn={}", sim.toString(), isbn,
-						otherIsbn);
-				simMatrixBuilder.put(isbn, otherIsbn, sim);
+				log.debug("sim={} isbn={} otherIsbn={}", sim, isbn, otherIsbn);
+				simMatrix.put(pair, sim);
 			}
 		}
-		simMatrix = simMatrixBuilder.build();
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Train: completed ({}s)", elapsedTime / 1000);
+	}
+
+	private static String pairKey(String isbn1, String isbn2) {
+		final Character separator = ' ';
+		if (isbn1.compareTo(isbn2) <= 0) {
+			return concat(isbn1, separator, isbn2);
+		}
+		return concat(isbn2, separator, isbn1);
 	}
 
 	private static double cosineSimilarity(Set<String> raters,
