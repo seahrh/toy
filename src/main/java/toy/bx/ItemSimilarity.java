@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
+import com.google.common.collect.Sets;
 
 import toy.util.FileUtil;
 import toy.util.MathUtil;
@@ -25,9 +26,9 @@ public final class ItemSimilarity {
 	private static final float TRAIN_PROPORTION = 0.8F;
 	private static final float TEST_PROPORTION = 1 - TRAIN_PROPORTION;
 	private static List<List<String>> trainSet = new ArrayList<>(
-			(int) (TRAIN_PROPORTION * 2000000));
+			(int) (TRAIN_PROPORTION * 1000000));
 	private static List<List<String>> testSet = new ArrayList<>(
-			(int) (TEST_PROPORTION * 2000000));
+			(int) (TEST_PROPORTION * 1000000));
 	private static ImmutableTable<String, String, Double> simMatrix;
 
 	public static void main(String[] args) throws IOException {
@@ -61,6 +62,7 @@ public final class ItemSimilarity {
 		Map<String, Integer> otherUidToRating;
 		Set<String> raters;
 		Set<String> otherRaters;
+		Set<String> commonRaters;
 		Double sim;
 		String otherIsbn;
 		for (Map.Entry<String, Map<String, Integer>> entry : itemMap.entrySet()) {
@@ -75,16 +77,17 @@ public final class ItemSimilarity {
 				otherUidToRating = other.getValue();
 				otherRaters = otherUidToRating.keySet();
 				// Intersect raters of this item vs. other item
-				raters.retainAll(otherRaters);
-				if (raters.isEmpty()) {
+				commonRaters = Sets.intersection(raters, otherRaters);
+				if (commonRaters.isEmpty()) {
 					// No raters in common; skip
 					continue;
 				}
-				sim = cosineSimilarity(raters, uidToRating, otherUidToRating);
+				sim = cosineSimilarity(commonRaters, uidToRating, otherUidToRating);
+				log.info("sim={} isbn={} otherIsbn={}", sim.toString(), isbn, otherIsbn);
 				simMatrixBuilder.put(isbn, otherIsbn, sim);
 			}
 		}
-		ImmutableTable<String, String, Double> simMatrix = simMatrixBuilder.build();
+		simMatrix = simMatrixBuilder.build();
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Train: completed ({}s)", elapsedTime / 1000);
 	}
@@ -101,6 +104,7 @@ public final class ItemSimilarity {
 			otherRatings[i] = (double) otherUidToRating.get(rater);
 			i++;
 		}
+		log.debug("ratings={}\notherRatings={}", ratings, otherRatings);
 		return MathUtil.cosineSimilarity(ratings, otherRatings);
 	}
 
@@ -113,7 +117,10 @@ public final class ItemSimilarity {
 		List<List<String>> in = FileUtil.read(RATINGS_FILE_PATH, separator,
 				nHeaderRows, omitEmptyStrings);
 		int size = in.size();
-		log.info("ratings size={}", size);
+		log.info("ratings size={}, before removing implicit ratings", size);
+		in = removeImplicitRatings(in);
+		size = in.size();
+		log.info("ratings size={}, after removing implicit ratings", size);
 		log.debug("{}", in);
 		Collections.shuffle(in);
 		int k = (int) (TRAIN_PROPORTION * size);
@@ -125,6 +132,18 @@ public final class ItemSimilarity {
 		}
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Extract: completed ({}s)", elapsedTime / 1000);
+	}
+	
+	private static List<List<String>> removeImplicitRatings(List<List<String>> ratings) {
+		List<List<String>> ret = new ArrayList<>(ratings.size());
+		int rating;
+		for (List<String> tokens : ratings) {
+			rating = Integer.parseInt(tokens.get(2));
+			if (rating != 0) {
+				ret.add(tokens);
+			}
+		}
+		return ret;
 	}
 
 }
