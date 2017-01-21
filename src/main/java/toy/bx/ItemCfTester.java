@@ -72,7 +72,7 @@ public final class ItemCfTester {
 		double rootMeanSquaredError = MathUtil.rootMeanSquaredError(
 				predictionsArr, actualsArr);
 		log.info(
-				"Results:\nmeanAbsoluteError={}\nrootMeanSquaredError={}\n#predictions={}\n#skipped",
+				"Results:\nmeanAbsoluteError={}\nrootMeanSquaredError={}\n#predictions={}\n#skipped={}",
 				meanAbsoluteError, rootMeanSquaredError, predictionsArr.length,
 				skipped);
 		long elapsedTime = System.currentTimeMillis() - startTime;
