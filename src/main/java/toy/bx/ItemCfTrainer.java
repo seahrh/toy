@@ -1,6 +1,6 @@
 package toy.bx;
 
-import static toy.util.StringUtil.concat;
+import static toy.bx.ItemCf.pairKey;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,20 +13,20 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import toy.util.FileUtil;
+import toy.util.MathUtil;
+
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Sets;
 
-import toy.util.FileUtil;
-import toy.util.MathUtil;
-
-public final class ItemSimilarity {
-	private static final Logger log = LoggerFactory.getLogger(ItemSimilarity.class);
-	private static final String RATINGS_FILE_PATH = System.getProperty("toy.ratings");
-	private static final String USERS_FILE_PATH = System.getProperty("toy.users");
-	private static final String BOOKS_FILE_PATH = System.getProperty("toy.books");
+public final class ItemCfTrainer {
+	private static final Logger log = LoggerFactory.getLogger(ItemCfTrainer.class);
+	private static final String RATINGS_INPUT_FILE_PATH = System.getProperty("toy.ratings-in");
+	private static final String TEST_SET_FILE_PATH = System.getProperty("toy.test");
+	private static final String SIMILARITY_MATRIX_FILE_PATH = System.getProperty("toy.sim");
+	private static final String RATINGS_TABLE_FILE_PATH = System.getProperty("toy.ratings");
 	private static final float TRAIN_PROPORTION = 0.8F;
 	private static final float TEST_PROPORTION = 1 - TRAIN_PROPORTION;
 	private static List<List<String>> trainSet = new ArrayList<>(
@@ -35,6 +35,10 @@ public final class ItemSimilarity {
 			(int) (TEST_PROPORTION * 1000000));
 	private static Map<String, Double> simMatrix = new HashMap<>();
 	private static ImmutableTable<String, String, Integer> ratingTable;
+	
+	private ItemCfTrainer() {
+		// Not meant to be instantiated
+	}
 
 	public static void main(String[] args) throws IOException {
 		long startTime = System.currentTimeMillis();
@@ -43,45 +47,7 @@ public final class ItemSimilarity {
 		train();
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Main: completed ({}s)", elapsedTime / 1000);
-	}
-
-	private static void test() {
-
-	}
-
-	private static Optional<Double> predict(String uid, String isbn) {
-		ImmutableMap<String, Integer> ratings = ratingTable.column(uid);
-		if (ratings.isEmpty()) {
-			// User has not rated any items, so cannot make prediction.
-			return Optional.absent();
-		}
-		Double ret;
-		Integer rating = ratings.get(isbn);
-		if (rating != null) {
-			log.warn(
-					"user has already rated this item, so no prediction was made.\nuid={} isbn={}",
-					uid, isbn);
-			return Optional.absent();
-		}
-		String ratedIsbn;
-		double nu = 0;
-		double de = 0;
-		Double sim;
-		for (Map.Entry<String, Integer> entry : ratings.entrySet()) {
-			ratedIsbn = entry.getKey();
-			rating = entry.getValue();
-			sim = simMatrix.get(pairKey(isbn, ratedIsbn));
-			if (sim == null) {
-				log.warn("Cannot predict because similarity score is missing for item pair={},{}",
-						isbn, ratedIsbn);
-				return Optional.absent();
-			}
-			nu += sim * rating;
-			de += sim;
-		}
-		ret = nu / de;
-		return Optional.of(ret);
-	}
+	}	
 
 	private static void train() throws IOException {
 		long startTime = System.currentTimeMillis();
@@ -143,14 +109,6 @@ public final class ItemSimilarity {
 		log.info("Train: completed ({}s)", elapsedTime / 1000);
 	}
 
-	private static String pairKey(String isbn1, String isbn2) {
-		final Character separator = ' ';
-		if (isbn1.compareTo(isbn2) <= 0) {
-			return concat(isbn1, separator, isbn2);
-		}
-		return concat(isbn2, separator, isbn1);
-	}
-
 	private static double cosineSimilarity(Set<String> raters,
 			Map<String, Integer> uidToRating,
 			Map<String, Integer> otherUidToRating) {
@@ -173,7 +131,7 @@ public final class ItemSimilarity {
 		final int nHeaderRows = 1;
 		final CharMatcher separator = CharMatcher.anyOf("\";\\");
 		final boolean omitEmptyStrings = true;
-		List<List<String>> in = FileUtil.read(RATINGS_FILE_PATH, separator,
+		List<List<String>> in = FileUtil.read(RATINGS_INPUT_FILE_PATH, separator,
 				nHeaderRows, omitEmptyStrings);
 		int size = in.size();
 		log.info("ratings size={}, before removing implicit ratings", size);
