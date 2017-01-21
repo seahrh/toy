@@ -72,9 +72,9 @@ public final class ItemSimilarity {
 			rating = entry.getValue();
 			sim = simMatrix.get(pairKey(isbn, ratedIsbn));
 			if (sim == null) {
-				log.error("Similarity score is missing for item pair={},{}",
+				log.warn("Cannot predict because similarity score is missing for item pair={},{}",
 						isbn, ratedIsbn);
-				throw new IllegalStateException();
+				return Optional.absent();
 			}
 			nu += sim * rating;
 			de += sim;
@@ -111,6 +111,7 @@ public final class ItemSimilarity {
 		for (Map.Entry<String, Map<String, Integer>> entry : itemMap.entrySet()) {
 			isbn = entry.getKey();
 			uidToRating = entry.getValue();
+			// this item has at least 1 rating
 			raters = uidToRating.keySet();
 			for (Map.Entry<String, Map<String, Integer>> other : itemMap.entrySet()) {
 				otherIsbn = other.getKey();
@@ -118,6 +119,7 @@ public final class ItemSimilarity {
 					continue;
 				}
 				otherUidToRating = other.getValue();
+				// other item has at least 1 rating
 				otherRaters = otherUidToRating.keySet();
 				// Intersect raters of this item vs. other item
 				commonRaters = Sets.intersection(raters, otherRaters);
