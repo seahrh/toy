@@ -35,7 +35,7 @@ public final class ItemCfTrainer {
 			(int) (TEST_PROPORTION * 1000000));
 	private static Map<String, Double> simMatrix = new HashMap<>();
 	private static ImmutableTable<String, String, Integer> ratingTable;
-	
+
 	private ItemCfTrainer() {
 		// Not meant to be instantiated
 	}
@@ -47,7 +47,7 @@ public final class ItemCfTrainer {
 		train();
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Main: completed ({}s)", elapsedTime / 1000);
-	}	
+	}
 
 	private static void train() throws IOException {
 		long startTime = System.currentTimeMillis();
@@ -74,6 +74,7 @@ public final class ItemCfTrainer {
 		Double sim;
 		String otherIsbn;
 		String pair;
+		int progress = 0;
 		for (Map.Entry<String, Map<String, Integer>> entry : itemMap.entrySet()) {
 			isbn = entry.getKey();
 			uidToRating = entry.getValue();
@@ -102,6 +103,9 @@ public final class ItemCfTrainer {
 				sim = cosineSimilarity(commonRaters, uidToRating,
 						otherUidToRating);
 				log.debug("sim={} isbn={} otherIsbn={}", sim, isbn, otherIsbn);
+				if (++progress % 1000 == 0) {
+					log.info("{} sim computed", progress);
+				}
 				simMatrix.put(pair, sim);
 			}
 		}
@@ -131,8 +135,8 @@ public final class ItemCfTrainer {
 		final int nHeaderRows = 1;
 		final CharMatcher separator = CharMatcher.anyOf("\";\\");
 		final boolean omitEmptyStrings = true;
-		List<List<String>> in = FileUtil.read(RATINGS_INPUT_FILE_PATH, separator,
-				nHeaderRows, omitEmptyStrings);
+		List<List<String>> in = FileUtil.read(RATINGS_INPUT_FILE_PATH,
+				separator, nHeaderRows, omitEmptyStrings);
 		int size = in.size();
 		log.info("ratings size={}, before removing implicit ratings", size);
 		in = removeImplicitRatings(in);
