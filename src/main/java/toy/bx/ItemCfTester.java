@@ -23,7 +23,7 @@ public final class ItemCfTester {
 	private static final Logger log = LoggerFactory.getLogger(ItemCfTester.class);
 	private static final String TEST_SET_FILE_PATH = System.getProperty("toy.test");
 	private static final String SIMILARITY_MATRIX_FILE_PATH = System.getProperty("toy.sim");
-	private static final String RATINGS_FILE_PATH = System.getProperty("toy.ratings");
+	private static final String RATINGS_FILE_PATH = System.getProperty("toy.ratings-train");
 	private static List<List<String>> testSet = new ArrayList<>((int) (1000000));
 	private static Map<String, Double> simMatrix = new HashMap<>();
 	private static ImmutableTable<String, String, Integer> ratingTable;
@@ -116,8 +116,8 @@ public final class ItemCfTester {
 		String isbn;
 		Integer rating;
 		for (List<String> tokens : in) {
-			uid = tokens.get(0);
-			isbn = tokens.get(1);
+			uid = tokens.get(0).toLowerCase();
+			isbn = tokens.get(1).toLowerCase();
 			rating = Integer.parseInt(tokens.get(2));
 			ratingTableBuilder.put(isbn, uid, rating);
 		}
