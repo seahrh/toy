@@ -76,6 +76,7 @@ public final class ItemCfTrainer {
 		String otherIsbn;
 		String pair;
 		int progress = 0;
+		final int progressInterval = 1000000;
 		for (Map.Entry<String, Map<String, Integer>> entry : itemMap.entrySet()) {
 			isbn = entry.getKey();
 			uidToRating = entry.getValue();
@@ -104,8 +105,8 @@ public final class ItemCfTrainer {
 				sim = cosineSimilarity(commonRaters, uidToRating,
 						otherUidToRating);
 				log.debug("sim={} isbn={} otherIsbn={}", sim, isbn, otherIsbn);
-				if (++progress % 1000 == 0) {
-					log.info("{} sim computed", progress);
+				if (++progress % progressInterval == 0) {
+					log.info("{}M sim computed", progress / progressInterval);
 				}
 				simMatrix.put(pair, sim);
 			}
