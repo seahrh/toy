@@ -20,6 +20,7 @@ import toy.util.MathUtil;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Sets;
 
@@ -76,7 +77,8 @@ public final class ItemCfTrainer {
 	private static void train() throws IOException {
 		long startTime = System.currentTimeMillis();
 		log.info("Train: started...");
-		final String[] items = (String[]) ratingTable.rowKeySet().toArray(); 
+		ImmutableSet<String> itemsSet = ratingTable.rowKeySet();
+		final String[] items = itemsSet.toArray(new String[itemsSet.size()]);
 		ImmutableMap<String, Map<String, Integer>> itemMap = ratingTable.rowMap();
 		Map<String, Integer> uidToRating;
 		Map<String, Integer> otherUidToRating;
