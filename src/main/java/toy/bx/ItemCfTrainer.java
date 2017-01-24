@@ -46,15 +46,16 @@ public final class ItemCfTrainer {
 		long startTime = System.currentTimeMillis();
 		log.info("Main: started...");
 		extract();
+		ratingTable();
 		train();
 		export();
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Main: completed ({}s)", elapsedTime / 1000);
 	}
-
-	private static void train() throws IOException {
+	
+	private static void ratingTable() {
 		long startTime = System.currentTimeMillis();
-		log.info("Train: started...");
+		log.info("ratingTable: started...");
 		ImmutableTable.Builder<String, String, Integer> ratingTableBuilder = ImmutableTable.builder();
 		String isbn;
 		String uid;
@@ -68,6 +69,14 @@ public final class ItemCfTrainer {
 			ratingTableBuilder.put(isbn, uid, rating);
 		}
 		ratingTable = ratingTableBuilder.build();
+		long elapsedTime = System.currentTimeMillis() - startTime;
+		log.info("ratingTable: completed ({}s)", elapsedTime / 1000);
+	}
+
+	private static void train() throws IOException {
+		long startTime = System.currentTimeMillis();
+		log.info("Train: started...");
+		final String[] items = (String[]) ratingTable.rowKeySet().toArray(); 
 		ImmutableMap<String, Map<String, Integer>> itemMap = ratingTable.rowMap();
 		Map<String, Integer> uidToRating;
 		Map<String, Integer> otherUidToRating;
@@ -75,21 +84,19 @@ public final class ItemCfTrainer {
 		Set<String> otherRaters;
 		Set<String> commonRaters;
 		Float sim;
+		String isbn;
 		String otherIsbn;
 		String pair;
 		int progress = 0;
-		final int progressInterval = 1000000;
-		for (Map.Entry<String, Map<String, Integer>> entry : itemMap.entrySet()) {
-			isbn = entry.getKey();
-			uidToRating = entry.getValue();
-			// this item has at least 1 rating
-			raters = uidToRating.keySet();
-			for (Map.Entry<String, Map<String, Integer>> other : itemMap.entrySet()) {
-				otherIsbn = other.getKey();
-				if (isbn.equals(otherIsbn)) {
-					continue;
-				}
-				otherUidToRating = other.getValue();
+		final int progressInterval = 1_000_000;
+		for (int i = 0; i < items.length; i++) {
+			for (int j = i + 1; j < items.length; j++) {
+				isbn = items[i];
+				uidToRating = itemMap.get(isbn);
+				// this item has at least 1 rating
+				raters = uidToRating.keySet();
+				otherIsbn = items[j];
+				otherUidToRating = itemMap.get(otherIsbn);
 				// other item has at least 1 rating
 				otherRaters = otherUidToRating.keySet();
 				// Intersect raters of this item vs. other item
@@ -99,11 +106,6 @@ public final class ItemCfTrainer {
 					continue;
 				}
 				pair = pairKey(isbn, otherIsbn);
-				sim = simMatrix.get(pair);
-				// Similarity score for this pair already exists; skip
-				if (sim != null) {
-					continue;
-				}
 				sim = (float) cosineSimilarity(commonRaters, uidToRating,
 						otherUidToRating);
 				log.debug("sim={} isbn={} otherIsbn={}", sim, isbn, otherIsbn);
@@ -113,6 +115,7 @@ public final class ItemCfTrainer {
 				simMatrix.put(pair, sim);
 			}
 		}
+		log.info("{} sim computed", progress);
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Train: completed ({}s)", elapsedTime / 1000);
 	}
