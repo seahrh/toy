@@ -3,6 +3,8 @@ package toy.bx;
 import static toy.bx.ItemCf.pairKey;
 
 import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,7 +35,7 @@ public final class ItemCfTrainer {
 			(int) (TRAIN_PROPORTION * 1000000));
 	private static List<List<String>> testSet = new ArrayList<>(
 			(int) (TEST_PROPORTION * 1000000));
-	private static Map<String, Double> simMatrix = new HashMap<>();
+	private static Map<String, Float> simMatrix = new HashMap<>(64_000_000);
 	private static ImmutableTable<String, String, Integer> ratingTable;
 
 	private ItemCfTrainer() {
@@ -72,7 +74,7 @@ public final class ItemCfTrainer {
 		Set<String> raters;
 		Set<String> otherRaters;
 		Set<String> commonRaters;
-		Double sim;
+		Float sim;
 		String otherIsbn;
 		String pair;
 		int progress = 0;
@@ -102,7 +104,7 @@ public final class ItemCfTrainer {
 				if (sim != null) {
 					continue;
 				}
-				sim = cosineSimilarity(commonRaters, uidToRating,
+				sim = (float) cosineSimilarity(commonRaters, uidToRating,
 						otherUidToRating);
 				log.debug("sim={} isbn={} otherIsbn={}", sim, isbn, otherIsbn);
 				if (++progress % progressInterval == 0) {
@@ -213,10 +215,15 @@ public final class ItemCfTrainer {
 		log.info("exportSimilarityMatrix: started...");
 		List<List<String>> data = new ArrayList<>(simMatrix.size());
 		List<String> tokens;
-		for (Map.Entry<String, Double> entry : simMatrix.entrySet()) {
+		Float sim;
+		// Round similarity to 8 decimal places
+		DecimalFormat df = new DecimalFormat("#.########");
+		df.setRoundingMode(RoundingMode.UP);
+		for (Map.Entry<String, Float> entry : simMatrix.entrySet()) {
+			sim = entry.getValue();
 			tokens = new ArrayList<>();
 			tokens.add(entry.getKey());
-			tokens.add(String.valueOf(entry.getValue()));
+			tokens.add(df.format((double) sim));
 			data.add(tokens);
 		}
 		final String separator = "\t";

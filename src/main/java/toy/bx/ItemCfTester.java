@@ -25,7 +25,7 @@ public final class ItemCfTester {
 	private static final String SIMILARITY_MATRIX_FILE_PATH = System.getProperty("toy.sim");
 	private static final String RATINGS_FILE_PATH = System.getProperty("toy.ratings-train");
 	private static List<List<String>> testSet = new ArrayList<>((int) (1000000));
-	private static Map<String, Double> simMatrix = new HashMap<>();
+	private static Map<String, Float> simMatrix = new HashMap<>(64_000_000);
 	private static ImmutableTable<String, String, Integer> ratingTable;
 
 	private ItemCfTester() {
@@ -96,10 +96,10 @@ public final class ItemCfTester {
 		List<List<String>> in = FileUtil.read(SIMILARITY_MATRIX_FILE_PATH,
 				separator);
 		String pair;
-		Double sim;
+		Float sim;
 		for (List<String> tokens : in) {
 			pair = tokens.get(0);
-			sim = Double.parseDouble(tokens.get(1));
+			sim = Float.parseFloat(tokens.get(1));
 			simMatrix.put(pair, sim);
 		}
 		long elapsedTime = System.currentTimeMillis() - startTime;

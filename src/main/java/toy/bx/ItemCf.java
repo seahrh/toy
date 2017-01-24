@@ -20,7 +20,7 @@ public final class ItemCf {
 
 	protected static Optional<Double> predict(String uid, String isbn,
 			ImmutableTable<String, String, Integer> ratingTable,
-			Map<String, Double> simMatrix) {
+			Map<String, Float> simMatrix) {
 		ImmutableMap<String, Integer> ratings = ratingTable.column(uid);
 		if (ratings.isEmpty()) {
 			// User has not rated any items, so cannot make prediction.
@@ -37,7 +37,7 @@ public final class ItemCf {
 		String ratedIsbn;
 		double nu = 0;
 		double de = 0;
-		Double sim;
+		Float sim;
 		for (Map.Entry<String, Integer> entry : ratings.entrySet()) {
 			ratedIsbn = entry.getKey();
 			rating = entry.getValue();
