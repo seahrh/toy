@@ -31,12 +31,18 @@ public final class ItemCfTrainer {
 	private static final String SIMILARITY_MATRIX_FILE_PATH = System.getProperty("toy.sim");
 	private static final String RATINGS_TABLE_FILE_PATH = System.getProperty("toy.ratings-train");
 	private static final float TRAIN_PROPORTION = 0.8F;
-	private static final float TEST_PROPORTION = 1 - TRAIN_PROPORTION;
+	private static final int RATINGS_EXPECTED_SIZE = 1_000_000;
+	private static final int TRAIN_SET_EXPECTED_SIZE = (int) TRAIN_PROPORTION
+			* RATINGS_EXPECTED_SIZE;
+	protected static final int TEST_SET_EXPECTED_SIZE = RATINGS_EXPECTED_SIZE
+			- TRAIN_SET_EXPECTED_SIZE;
 	private static List<List<String>> trainSet = new ArrayList<>(
-			(int) (TRAIN_PROPORTION * 1000000));
+			TRAIN_SET_EXPECTED_SIZE);
 	private static List<List<String>> testSet = new ArrayList<>(
-			(int) (TEST_PROPORTION * 1000000));
-	private static Map<String, Float> simMatrix = new HashMap<>(64_000_000);
+			TEST_SET_EXPECTED_SIZE);
+	protected static final int SIMILARITY_MATRIX_EXPECTED_SIZE = 50_000_000;
+	private static Map<String, Float> simMatrix = new HashMap<>(
+			SIMILARITY_MATRIX_EXPECTED_SIZE, 0.99F);
 	private static ImmutableTable<String, String, Integer> ratingTable;
 
 	private ItemCfTrainer() {
@@ -53,7 +59,7 @@ public final class ItemCfTrainer {
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Main: completed ({}s)", elapsedTime / 1000);
 	}
-	
+
 	private static void ratingTable() {
 		long startTime = System.currentTimeMillis();
 		log.info("ratingTable: started...");
@@ -236,7 +242,7 @@ public final class ItemCfTrainer {
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("exportSimilarityMatrix: completed ({}s)", elapsedTime / 1000);
 	}
-	
+
 	private static void export() throws IOException {
 		long startTime = System.currentTimeMillis();
 		log.info("export: started...");

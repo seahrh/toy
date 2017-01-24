@@ -24,8 +24,8 @@ public final class ItemCfTester {
 	private static final String TEST_SET_FILE_PATH = System.getProperty("toy.test");
 	private static final String SIMILARITY_MATRIX_FILE_PATH = System.getProperty("toy.sim");
 	private static final String RATINGS_FILE_PATH = System.getProperty("toy.ratings-train");
-	private static List<List<String>> testSet = new ArrayList<>((int) (1000000));
-	private static Map<String, Float> simMatrix = new HashMap<>(64_000_000);
+	private static List<List<String>> testSet = new ArrayList<>(ItemCfTrainer.TEST_SET_EXPECTED_SIZE);
+	private static Map<String, Float> simMatrix = new HashMap<>(ItemCfTrainer.SIMILARITY_MATRIX_EXPECTED_SIZE, 0.99F);
 	private static ImmutableTable<String, String, Integer> ratingTable;
 
 	private ItemCfTester() {
