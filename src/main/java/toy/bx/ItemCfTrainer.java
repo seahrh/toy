@@ -1,10 +1,9 @@
 package toy.bx;
 
 import static toy.bx.ItemCf.pairKey;
+import static toy.bx.ItemCf.predict;
 
 import java.io.IOException;
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -19,31 +18,19 @@ import toy.util.FileUtil;
 import toy.util.MathUtil;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Doubles;
 
 public final class ItemCfTrainer {
 	private static final Logger log = LoggerFactory.getLogger(ItemCfTrainer.class);
 	private static final String RATINGS_INPUT_FILE_PATH = System.getProperty("toy.ratings");
-	private static final String TEST_SET_FILE_PATH = System.getProperty("toy.test");
-	private static final String SIMILARITY_MATRIX_FILE_PATH = System.getProperty("toy.sim");
-	private static final String RATINGS_TABLE_FILE_PATH = System.getProperty("toy.ratings-train");
-	private static final float TRAIN_PROPORTION = 0.8F;
-	private static final int RATINGS_EXPECTED_SIZE = 1_000_000;
-	private static final int TRAIN_SET_EXPECTED_SIZE = (int) TRAIN_PROPORTION
-			* RATINGS_EXPECTED_SIZE;
-	protected static final int TEST_SET_EXPECTED_SIZE = RATINGS_EXPECTED_SIZE
-			- TRAIN_SET_EXPECTED_SIZE;
-	private static List<List<String>> trainSet = new ArrayList<>(
-			TRAIN_SET_EXPECTED_SIZE);
-	private static List<List<String>> testSet = new ArrayList<>(
-			TEST_SET_EXPECTED_SIZE);
-	protected static final int SIMILARITY_MATRIX_EXPECTED_SIZE = 50_000_000;
-	private static Map<String, Float> simMatrix = new HashMap<>(
-			SIMILARITY_MATRIX_EXPECTED_SIZE, 0.99F);
-	private static ImmutableTable<String, String, Integer> ratingTable;
+	private static final int K_FOLDS = Integer.parseInt(System.getProperty("toy.folds"));
+	private static List<List<List<String>>> folds = new ArrayList<>(K_FOLDS);
+	private static int ratingCount = 0;
 
 	private ItemCfTrainer() {
 		// Not meant to be instantiated
@@ -53,21 +40,20 @@ public final class ItemCfTrainer {
 		long startTime = System.currentTimeMillis();
 		log.info("Main: started...");
 		extract();
-		ratingTable();
-		train();
-		export();
+		validate();
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Main: completed ({}s)", elapsedTime / 1000);
 	}
 
-	private static void ratingTable() {
+	private static ImmutableTable<String, String, Integer> ratingTable(
+			List<List<String>> data) {
 		long startTime = System.currentTimeMillis();
 		log.info("ratingTable: started...");
 		ImmutableTable.Builder<String, String, Integer> ratingTableBuilder = ImmutableTable.builder();
 		String isbn;
 		String uid;
 		Integer rating;
-		for (List<String> tokens : trainSet) {
+		for (List<String> tokens : data) {
 			uid = tokens.get(0)
 				.toLowerCase();
 			isbn = tokens.get(1)
@@ -75,14 +61,92 @@ public final class ItemCfTrainer {
 			rating = Integer.parseInt(tokens.get(2));
 			ratingTableBuilder.put(isbn, uid, rating);
 		}
-		ratingTable = ratingTableBuilder.build();
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("ratingTable: completed ({}s)", elapsedTime / 1000);
+		return ratingTableBuilder.build();
 	}
 
-	private static void train() throws IOException {
+	private static void validate() {
+		List<List<String>> trainSet;
+		List<List<String>> testSet;
+		Result r;
+		double sumMae = 0;
+		double sumRmse = 0;
+		int predictionCount = 0;
+		int skippedCount = 0;
+		for (int k = 0; k < K_FOLDS; k++) {
+			trainSet = new ArrayList<>(ratingCount);
+			testSet = folds.get(k);
+			for (int i = 0; i < K_FOLDS; i++) {
+				if (i == k) {
+					continue;
+				}
+				trainSet.addAll(folds.get(i));
+			}
+			r = validate(trainSet, testSet);
+			sumMae += r.meanAbsoluteError;
+			sumRmse += r.rootMeanSquaredError;
+			predictionCount += r.predictionCount;
+			skippedCount += r.skippedCount;
+			log.info(
+					"Results for k={}:\nmeanAbsoluteError={}\nrootMeanSquaredError={}\n#predictions={}\n#skipped={}",
+					k, r.meanAbsoluteError, r.rootMeanSquaredError,
+					r.predictionCount, r.skippedCount);
+		}
+		log.info(
+				"{}-fold validation results:\naverage meanAbsoluteError={}\naverage rootMeanSquaredError={}\ntotal #predictions={}\ntotal #skipped={}",
+				K_FOLDS, sumMae / K_FOLDS, sumRmse / K_FOLDS, predictionCount,
+				skippedCount);
+	}
+
+	private static Result validate(List<List<String>> trainSet,
+			List<List<String>> testSet) {
 		long startTime = System.currentTimeMillis();
-		log.info("Train: started...");
+		log.info("validate: started...");
+		ImmutableTable<String, String, Integer> ratingTable = ratingTable(trainSet);
+		Map<String, Float> simMatrix = similarityMatrix(ratingTable);
+		List<Double> predictions = new ArrayList<>(testSet.size());
+		List<Double> actuals = new ArrayList<>(testSet.size());
+		String isbn;
+		String uid;
+		Double a;
+		Optional<Double> op;
+		int skipped = 0;
+		for (List<String> tokens : testSet) {
+			uid = tokens.get(0)
+				.toLowerCase();
+			isbn = tokens.get(1)
+				.toLowerCase();
+			a = Double.parseDouble(tokens.get(2));
+			op = predict(uid, isbn, ratingTable, simMatrix);
+			if (!op.isPresent()) {
+				skipped++;
+				continue;
+			}
+			actuals.add(a);
+			predictions.add(op.get());
+		}
+		double[] predictionsArr = Doubles.toArray(predictions);
+		double[] actualsArr = Doubles.toArray(actuals);
+		Result result = new Result();
+		result.meanAbsoluteError = MathUtil.meanAbsoluteError(predictionsArr,
+				actualsArr);
+		result.rootMeanSquaredError = MathUtil.rootMeanSquaredError(
+				predictionsArr, actualsArr);
+		result.predictionCount = predictionsArr.length;
+		result.skippedCount = skipped;
+		long elapsedTime = System.currentTimeMillis() - startTime;
+		log.info("validate: completed ({}s)", elapsedTime / 1000);
+		return result;
+	}
+
+	private static Map<String, Float> similarityMatrix(
+			ImmutableTable<String, String, Integer> ratingTable) {
+		long startTime = System.currentTimeMillis();
+		log.info("similarityMatrix: started...");
+		final int simMatrixExpectedSize = 50_000_000;
+		Map<String, Float> simMatrix = new HashMap<>(simMatrixExpectedSize,
+				0.99F);
 		ImmutableSet<String> itemsSet = ratingTable.rowKeySet();
 		final String[] items = itemsSet.toArray(new String[itemsSet.size()]);
 		ImmutableMap<String, Map<String, Integer>> itemMap = ratingTable.rowMap();
@@ -125,7 +189,8 @@ public final class ItemCfTrainer {
 		}
 		log.info("{} sim computed", progress);
 		long elapsedTime = System.currentTimeMillis() - startTime;
-		log.info("Train: completed ({}s)", elapsedTime / 1000);
+		log.info("similarityMatrix: completed ({}s)", elapsedTime / 1000);
+		return simMatrix;
 	}
 
 	private static double cosineSimilarity(Set<String> raters,
@@ -152,20 +217,14 @@ public final class ItemCfTrainer {
 		final boolean omitEmptyStrings = true;
 		List<List<String>> in = FileUtil.read(RATINGS_INPUT_FILE_PATH,
 				separator, nHeaderRows, omitEmptyStrings);
-		int size = in.size();
-		log.info("ratings size={}, before removing implicit ratings", size);
+		log.info("ratings size={}, before removing implicit ratings", in.size());
 		in = removeImplicitRatings(in);
-		size = in.size();
-		log.info("ratings size={}, after removing implicit ratings", size);
+		ratingCount = in.size();
+		log.info("ratings size={}, after removing implicit ratings",
+				ratingCount);
 		log.debug("{}", in);
 		Collections.shuffle(in);
-		int k = (int) (TRAIN_PROPORTION * size);
-		for (int i = 0; i < k; i++) {
-			trainSet.add(in.get(i));
-		}
-		for (int i = k; i < size; i++) {
-			testSet.add(in.get(i));
-		}
+		// TODO populate folds
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Extract: completed ({}s)", elapsedTime / 1000);
 	}
@@ -183,74 +242,11 @@ public final class ItemCfTrainer {
 		return ret;
 	}
 
-	private static void exportTestSet() throws IOException {
-		long startTime = System.currentTimeMillis();
-		log.info("exportTestSet: started...");
-		final String separator = "\t";
-		FileUtil.write(testSet, TEST_SET_FILE_PATH, separator);
-		long elapsedTime = System.currentTimeMillis() - startTime;
-		log.info("exportTestSet: completed ({}s)", elapsedTime / 1000);
-	}
-
-	private static void exportRatingsTable() throws IOException {
-		long startTime = System.currentTimeMillis();
-		log.info("exportRatingsTable: started...");
-		List<List<String>> data = new ArrayList<>(ratingTable.size());
-		List<String> tokens;
-		String isbn;
-		String uid;
-		String rating;
-		Map<String, Integer> userMap;
-		ImmutableMap<String, Map<String, Integer>> itemMap = ratingTable.rowMap();
-		for (Map.Entry<String, Map<String, Integer>> item : itemMap.entrySet()) {
-			tokens = new ArrayList<>();
-			isbn = item.getKey();
-			userMap = item.getValue();
-			for (Map.Entry<String, Integer> user : userMap.entrySet()) {
-				uid = user.getKey();
-				rating = String.valueOf(user.getValue());
-				tokens.add(uid);
-				tokens.add(isbn);
-				tokens.add(rating);
-				data.add(tokens);
-			}
-		}
-		final String separator = "\t";
-		FileUtil.write(data, RATINGS_TABLE_FILE_PATH, separator);
-		long elapsedTime = System.currentTimeMillis() - startTime;
-		log.info("exportRatingsTable: completed ({}s)", elapsedTime / 1000);
-	}
-
-	private static void exportSimilarityMatrix() throws IOException {
-		long startTime = System.currentTimeMillis();
-		log.info("exportSimilarityMatrix: started...");
-		List<List<String>> data = new ArrayList<>(simMatrix.size());
-		List<String> tokens;
-		Float sim;
-		// Round similarity to 8 decimal places
-		DecimalFormat df = new DecimalFormat("#.########");
-		df.setRoundingMode(RoundingMode.UP);
-		for (Map.Entry<String, Float> entry : simMatrix.entrySet()) {
-			sim = entry.getValue();
-			tokens = new ArrayList<>();
-			tokens.add(entry.getKey());
-			tokens.add(df.format((double) sim));
-			data.add(tokens);
-		}
-		final String separator = "\t";
-		FileUtil.write(data, SIMILARITY_MATRIX_FILE_PATH, separator);
-		long elapsedTime = System.currentTimeMillis() - startTime;
-		log.info("exportSimilarityMatrix: completed ({}s)", elapsedTime / 1000);
-	}
-
-	private static void export() throws IOException {
-		long startTime = System.currentTimeMillis();
-		log.info("export: started...");
-		exportTestSet();
-		exportRatingsTable();
-		exportSimilarityMatrix();
-		long elapsedTime = System.currentTimeMillis() - startTime;
-		log.info("export: completed ({}s)", elapsedTime / 1000);
+	private static class Result {
+		private double meanAbsoluteError = 0;
+		private double rootMeanSquaredError = 0;
+		private int predictionCount = 0;
+		private int skippedCount = 0;
 	}
 
 }
