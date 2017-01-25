@@ -224,7 +224,20 @@ public final class ItemCfValidator {
 				ratingCount);
 		log.debug("{}", in);
 		Collections.shuffle(in);
-		// TODO populate folds
+		int size = ratingCount / K_FOLDS;
+		List<List<String>> fold;
+		int i = 0;
+		int j = size;
+		for (int k = 0; k < K_FOLDS; k++) {
+			if (k == K_FOLDS - 1) {
+				j = ratingCount;
+			} else {
+				j = i + size;
+			}
+			fold = in.subList(i, j);
+			folds.add(fold);
+			i += size;
+		}
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Extract: completed ({}s)", elapsedTime / 1000);
 	}
