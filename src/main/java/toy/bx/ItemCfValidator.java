@@ -110,7 +110,7 @@ public final class ItemCfValidator {
 		String isbn;
 		String uid;
 		Double a;
-		Optional<Double> op;
+		Optional<Integer> op;
 		int skipped = 0;
 		for (List<String> tokens : testSet) {
 			uid = tokens.get(0)
@@ -124,7 +124,7 @@ public final class ItemCfValidator {
 				continue;
 			}
 			actuals.add(a);
-			predictions.add(op.get());
+			predictions.add((double) op.get());
 		}
 		double[] predictionsArr = Doubles.toArray(predictions);
 		double[] actualsArr = Doubles.toArray(actuals);

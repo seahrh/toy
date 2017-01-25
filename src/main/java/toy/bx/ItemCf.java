@@ -18,7 +18,7 @@ public final class ItemCf {
 		// Not meant to be instantiated
 	}
 
-	protected static Optional<Double> predict(String uid, String isbn,
+	protected static Optional<Integer> predict(String uid, String isbn,
 			ImmutableTable<String, String, Integer> ratingTable,
 			Map<String, Float> simMatrix) {
 		ImmutableMap<String, Integer> ratings = ratingTable.column(uid);
@@ -26,7 +26,8 @@ public final class ItemCf {
 			// User has not rated any items, so cannot make prediction.
 			return Optional.absent();
 		}
-		Double ret;
+		Integer ret;
+		float p;
 		Integer rating = ratings.get(isbn);
 		if (rating != null) {
 			log.warn(
@@ -35,23 +36,31 @@ public final class ItemCf {
 			return Optional.absent();
 		}
 		String ratedIsbn;
-		double nu = 0;
-		double de = 0;
+		float nu = 0;
+		float de = 0;
 		Float sim;
 		for (Map.Entry<String, Integer> entry : ratings.entrySet()) {
 			ratedIsbn = entry.getKey();
 			rating = entry.getValue();
 			sim = simMatrix.get(pairKey(isbn, ratedIsbn));
 			if (sim == null) {
-				log.warn(
-						"Cannot predict because similarity score is missing for item pair={},{}",
+				log.debug(
+						"similarity score is not available for item pair={},{}",
 						isbn, ratedIsbn);
-				return Optional.absent();
+				continue;
 			}
 			nu += sim * rating;
 			de += sim;
 		}
-		ret = nu / de;
+		p = nu / de;
+		if (p == 0) {
+			log.warn("predicted rating must be greater than zero");
+			return Optional.absent();
+		}
+		ret = Math.round(p);
+		if (ret == 0) {
+			ret = 1;
+		}
 		return Optional.of(ret);
 	}
 
