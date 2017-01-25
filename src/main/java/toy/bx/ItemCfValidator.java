@@ -25,14 +25,14 @@ import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Doubles;
 
-public final class ItemCfTrainer {
-	private static final Logger log = LoggerFactory.getLogger(ItemCfTrainer.class);
+public final class ItemCfValidator {
+	private static final Logger log = LoggerFactory.getLogger(ItemCfValidator.class);
 	private static final String RATINGS_INPUT_FILE_PATH = System.getProperty("toy.ratings");
 	private static final int K_FOLDS = Integer.parseInt(System.getProperty("toy.folds"));
 	private static List<List<List<String>>> folds = new ArrayList<>(K_FOLDS);
 	private static int ratingCount = 0;
 
-	private ItemCfTrainer() {
+	private ItemCfValidator() {
 		// Not meant to be instantiated
 	}
 
