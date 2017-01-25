@@ -90,7 +90,7 @@ public final class ItemCfValidator {
 			skippedCount += r.skippedCount;
 			log.info(
 					"Results for k={}:\nmeanAbsoluteError={}\nrootMeanSquaredError={}\n#predictions={}\n#skipped={}",
-					k, r.meanAbsoluteError, r.rootMeanSquaredError,
+					k + 1, r.meanAbsoluteError, r.rootMeanSquaredError,
 					r.predictionCount, r.skippedCount);
 		}
 		log.info(
@@ -236,7 +236,7 @@ public final class ItemCfValidator {
 			}
 			fold = in.subList(i, j);
 			folds.add(fold);
-			i += size;
+			i = j;
 		}
 		long elapsedTime = System.currentTimeMillis() - startTime;
 		log.info("Extract: completed ({}s)", elapsedTime / 1000);
