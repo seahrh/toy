@@ -29,6 +29,7 @@ public final class ItemCfValidator {
 	private static final Logger log = LoggerFactory.getLogger(ItemCfValidator.class);
 	private static final String RATINGS_INPUT_FILE_PATH = System.getProperty("toy.ratings");
 	private static final int K_FOLDS = Integer.parseInt(System.getProperty("toy.folds"));
+	private static final int MIN_RATINGS_COUNT = Integer.parseInt(System.getProperty("toy.min-ratings"));
 	private static List<List<List<String>>> folds = new ArrayList<>(K_FOLDS);
 	private static int ratingCount = 0;
 
@@ -89,12 +90,12 @@ public final class ItemCfValidator {
 			predictionCount += r.predictionCount;
 			skippedCount += r.skippedCount;
 			log.info(
-					"Results for k={}:\nmeanAbsoluteError={}\nrootMeanSquaredError={}\n#predictions={}\n#skipped={}",
+					"=====\nResults for k={}:\nmeanAbsoluteError={}\nrootMeanSquaredError={}\n#predictions={}\n#skipped={}\n=====",
 					k + 1, r.meanAbsoluteError, r.rootMeanSquaredError,
 					r.predictionCount, r.skippedCount);
 		}
 		log.info(
-				"{}-fold validation results:\naverage meanAbsoluteError={}\naverage rootMeanSquaredError={}\ntotal #predictions={}\ntotal #skipped={}",
+				"=====\n{}-fold validation results:\naverage meanAbsoluteError={}\naverage rootMeanSquaredError={}\ntotal #predictions={}\ntotal #skipped={}\n=====",
 				K_FOLDS, sumMae / K_FOLDS, sumRmse / K_FOLDS, predictionCount,
 				skippedCount);
 	}
@@ -110,6 +111,7 @@ public final class ItemCfValidator {
 		String isbn;
 		String uid;
 		Double a;
+		Double p;
 		Optional<Integer> op;
 		int skipped = 0;
 		for (List<String> tokens : testSet) {
@@ -118,13 +120,15 @@ public final class ItemCfValidator {
 			isbn = tokens.get(1)
 				.toLowerCase();
 			a = Double.parseDouble(tokens.get(2));
-			op = predict(uid, isbn, ratingTable, simMatrix);
+			op = predict(uid, isbn, ratingTable, simMatrix, MIN_RATINGS_COUNT);
 			if (!op.isPresent()) {
 				skipped++;
 				continue;
 			}
 			actuals.add(a);
-			predictions.add((double) op.get());
+			p = (double) op.get();
+			predictions.add(p);
+			log.debug("a={}, p={}", a, p);
 		}
 		double[] predictionsArr = Doubles.toArray(predictions);
 		double[] actualsArr = Doubles.toArray(actuals);

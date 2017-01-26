@@ -20,10 +20,14 @@ public final class ItemCf {
 
 	protected static Optional<Integer> predict(String uid, String isbn,
 			ImmutableTable<String, String, Integer> ratingTable,
-			Map<String, Float> simMatrix) {
+			Map<String, Float> simMatrix, int minRatings) {
 		ImmutableMap<String, Integer> ratings = ratingTable.column(uid);
 		if (ratings.isEmpty()) {
 			// User has not rated any items, so cannot make prediction.
+			return Optional.absent();
+		}
+		if (ratings.size() < minRatings) {
+			// User has rated too few items to make an accurate prediction.
 			return Optional.absent();
 		}
 		Integer ret;
@@ -39,6 +43,7 @@ public final class ItemCf {
 		float nu = 0;
 		float de = 0;
 		Float sim;
+		int count = 0;
 		for (Map.Entry<String, Integer> entry : ratings.entrySet()) {
 			ratedIsbn = entry.getKey();
 			rating = entry.getValue();
@@ -51,6 +56,12 @@ public final class ItemCf {
 			}
 			nu += sim * rating;
 			de += sim;
+			count++;
+		}
+		if (count < minRatings) {
+			// Too few rated items to make an accurate prediction,
+			// some items were dropped because the similarity score is not available.
+			return Optional.absent();
 		}
 		p = nu / de;
 		if (p == 0) {
