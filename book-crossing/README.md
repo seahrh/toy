@@ -28,7 +28,7 @@ The similarity matrix is another hash table where the similarity score can be lo
 
 After collecting a set S of items similar to i, pu,i can be predicted as follows:
 
-![](book-crossing/formula.jpg?raw=true)
+![](formula.jpg?raw=true)
 
 Unlike the prediction formula in Ekstrand et al (2010), I did not implement an upper bound on the size of S. This is because the rating matrix is sparse, i.e. there are few ratings per user. This is also known as the cold start problem.
 
@@ -107,7 +107,7 @@ Attempted k=4 but did not complete evaluation because a single test takes about 
 
 ## Source Code
 
-Written in Java, the source code can be found [here](src/main/java/toy/bx).
+Written in Java, the source code can be found [here](../src/main/java/toy/bx).
 
 ## References
 
