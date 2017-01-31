@@ -26,7 +26,7 @@ The training set is then put into a hash table where the ratings can be looked u
 
 The similarity matrix is another hash table where the similarity score can be looked up by a unique composite key formed by the item pair (sort the two book ids and concatenate them).  
 
-After collecting a set S of items similar to i, pu,i can be predicted as follows:
+After collecting a set S of items similar to i, p(u,i) can be predicted as follows:
 
 ![](formula.jpg?raw=true)
 
