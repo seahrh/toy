@@ -25,12 +25,32 @@ import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Doubles;
 
+/**
+ * k-fold validation for item-based collaborative filtering on the book crossing
+ * dataset. Only explicit ratings are considered (1 - 10 on the rating scale,
+ * higher values denoting higher appreciation). Implicit ratings are removed.
+ * 
+ */
 public final class ItemCfValidator {
 	private static final Logger log = LoggerFactory.getLogger(ItemCfValidator.class);
+	/**
+	 * Ratings input file path
+	 */
 	private static final String RATINGS_INPUT_FILE_PATH = System.getProperty("toy.ratings");
+	/**
+	 * Number of folds
+	 */
 	private static final int K_FOLDS = Integer.parseInt(System.getProperty("toy.folds"));
+	/**
+	 * Minimum number of ratings that user must make in order to make a
+	 * prediction. The higher this threshold, the fewer predictions made.
+	 */
 	private static final int MIN_RATINGS_COUNT = Integer.parseInt(System.getProperty("toy.min-ratings"));
 	private static List<List<List<String>>> folds = new ArrayList<>(K_FOLDS);
+	/**
+	 * Remaining number of ratings after preprocessing. These ratings will be
+	 * divided into k folds.
+	 */
 	private static int ratingCount = 0;
 
 	private ItemCfValidator() {
@@ -46,6 +66,14 @@ public final class ItemCfValidator {
 		log.info("Main: completed ({}s)", elapsedTime / 1000);
 	}
 
+	/**
+	 * Put ratings in a table so that it can be looked up by either books (rows)
+	 * or users (columns) in O(1) time.
+	 * 
+	 * @param data
+	 *            list of lines representing the training set
+	 * @return table of ratings where rows are books and columns are users
+	 */
 	private static ImmutableTable<String, String, Integer> ratingTable(
 			List<List<String>> data) {
 		long startTime = System.currentTimeMillis();
@@ -67,6 +95,9 @@ public final class ItemCfValidator {
 		return ratingTableBuilder.build();
 	}
 
+	/**
+	 * Run k-fold validation, testing each fold and report the results.
+	 */
 	private static void validate() {
 		List<List<String>> trainSet;
 		List<List<String>> testSet;
@@ -100,6 +131,16 @@ public final class ItemCfValidator {
 				skippedCount);
 	}
 
+	/**
+	 * Given a training set, build a rating table and similarity matrix for
+	 * predicting ratings in the testing set.
+	 * 
+	 * @param trainSet
+	 *            list of lines representing the training set
+	 * @param testSet
+	 *            list of lines representing the testing set
+	 * @return test results
+	 */
 	private static Result validate(List<List<String>> trainSet,
 			List<List<String>> testSet) {
 		long startTime = System.currentTimeMillis();
@@ -144,6 +185,14 @@ public final class ItemCfValidator {
 		return result;
 	}
 
+	/**
+	 * Given a rating table, build an item-item similarity matrix.
+	 * <p>
+	 * Similarity scores are stored as Float type to save space.
+	 * 
+	 * @param ratingTable
+	 * @return Map of item-pair key to its similarity score.
+	 */
 	private static Map<String, Float> similarityMatrix(
 			ImmutableTable<String, String, Integer> ratingTable) {
 		long startTime = System.currentTimeMillis();
@@ -165,6 +214,17 @@ public final class ItemCfValidator {
 		String pair;
 		int progress = 0;
 		final int progressInterval = 1_000_000;
+		// Loop only the upper triangle of the item-item matrix.
+		// Skip the lower triangle as their similarity scores have already been
+		// computed.
+		// This still takes O(n^2) time but practically, this reduces run time
+		// by two-thirds as compared to a full nested loop. Performance gains
+		// from not having to check whether similarity score has already been
+		// computed, despite the lookup taking O(1) time.
+		// One possibe reason is that the similarity matrix hash table is huge,
+		// thus increasing the chance of
+		// key collision and the lookup time is greater than O(1) time in an
+		// imperfect hash table.
 		for (int i = 0; i < items.length; i++) {
 			for (int j = i + 1; j < items.length; j++) {
 				isbn = items[i];
@@ -182,7 +242,7 @@ public final class ItemCfValidator {
 					continue;
 				}
 				pair = pairKey(isbn, otherIsbn);
-				sim = (float) cosineSimilarity(commonRaters, uidToRating,
+				sim = cosineSimilarity(commonRaters, uidToRating,
 						otherUidToRating);
 				log.debug("sim={} isbn={} otherIsbn={}", sim, isbn, otherIsbn);
 				if (++progress % progressInterval == 0) {
@@ -197,7 +257,20 @@ public final class ItemCfValidator {
 		return simMatrix;
 	}
 
-	private static double cosineSimilarity(Set<String> raters,
+	/**
+	 * Use cosine similarity to measure the similarity between two items. For
+	 * speed and effectiveness, cosine similarity is recommended for item-based
+	 * collaborative filtering in Ekstrand et al (2010).
+	 * 
+	 * @param raters
+	 *            Set of raters that are common to both items.
+	 * @param uidToRating
+	 *            Map of user id to rating for the first item
+	 * @param otherUidToRating
+	 *            Map of user id to rating for the second item
+	 * @return cosine similarity between two books
+	 */
+	private static float cosineSimilarity(Set<String> raters,
 			Map<String, Integer> uidToRating,
 			Map<String, Integer> otherUidToRating) {
 		int size = raters.size();
@@ -210,9 +283,15 @@ public final class ItemCfValidator {
 			i++;
 		}
 		log.debug("ratings={}\notherRatings={}", ratings, otherRatings);
-		return MathUtil.cosineSimilarity(ratings, otherRatings);
+		return (float) MathUtil.cosineSimilarity(ratings, otherRatings);
 	}
 
+	/**
+	 * Import the ratings file and divide the data into k folds. Preprocessing:
+	 * remove implicit ratings.
+	 * 
+	 * @throws IOException
+	 */
 	private static void extract() throws IOException {
 		long startTime = System.currentTimeMillis();
 		log.info("Extract: started...");
@@ -227,6 +306,7 @@ public final class ItemCfValidator {
 		log.info("ratings size={}, after removing implicit ratings",
 				ratingCount);
 		log.debug("{}", in);
+		// Randomly reshuffle the dataset before splitting into folds
 		Collections.shuffle(in);
 		int size = ratingCount / K_FOLDS;
 		List<List<String>> fold;
@@ -246,6 +326,12 @@ public final class ItemCfValidator {
 		log.info("Extract: completed ({}s)", elapsedTime / 1000);
 	}
 
+	/**
+	 * Discard implicit ratings that are expressed by 0 on the rating scale.
+	 * 
+	 * @param ratings
+	 * @return
+	 */
 	private static List<List<String>> removeImplicitRatings(
 			List<List<String>> ratings) {
 		List<List<String>> ret = new ArrayList<>(ratings.size());
@@ -259,10 +345,20 @@ public final class ItemCfValidator {
 		return ret;
 	}
 
+	/**
+	 * Store the results of each test.
+	 * 
+	 */
 	private static class Result {
 		private double meanAbsoluteError = 0;
 		private double rootMeanSquaredError = 0;
+		/**
+		 * Number of predictions made in this test
+		 */
 		private int predictionCount = 0;
+		/**
+		 * Number of test items skipped because prediction could not be made
+		 */
 		private int skippedCount = 0;
 	}
 
