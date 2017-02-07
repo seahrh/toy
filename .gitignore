@@ -88,6 +88,5 @@ $RECYCLE.BIN/
 eclipse-launch-profiles/
 target/
 node_modules/
-src/main/java/toy/rm/Spreadsheet.java
 
 
